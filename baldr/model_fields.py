@@ -17,19 +17,29 @@ class ResourceField(six.with_metaclass(models.SubfieldBase, models.TextField)):
         super(ResourceField, self).__init__(*args, **kwargs)
 
     def to_python(self, value):
-        """Convert string object into """
         if value is None or value == '':
             return self.resource()
         elif isinstance(value, basestring):
             try:
-                return json_codec.loads(value, self.resource)
+                return json_codec.loads(value, self.resource, False)
             except odin_exceptions.ValidationError as ve:
                 raise ValidationError(message=ve.message_dict)
         else:
             return value
 
+    def validate(self, value, model_instance):
+        super(ResourceField, self).validate(value, model_instance)
+
+        if value in self.empty_values:
+            return
+
+        try:
+            value.full_clean()
+        except odin_exceptions.ValidationError as ve:
+            raise ValidationError(message=ve.message_dict)
+
     def get_db_prep_save(self, value, connection):
-        """Convert our JSON object to a string before we save"""
+        # Convert our JSON object to a string before we save
         if not isinstance(value, self.resource):
             return super(ResourceField, self).get_db_prep_save("", connection=connection)
         else:
