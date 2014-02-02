@@ -19,7 +19,7 @@ Includes mapping of Django Models to Odin resources, and RESTful API implementat
 Quick links
 *********** 
 
-* `Documentation <https://odin.readthedocs.org/en/latest/django>`_ 
+* `Documentation <https://odin.readthedocs.org/en/development/integration/django>`_
 * `Project home <https://github.com/timsavage/baldr>`_ 
 * `Issue tracker <https://github.com/timsavage/baldr/issues>`_
 
