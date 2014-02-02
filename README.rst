@@ -5,13 +5,15 @@ Odin integration with Django
 Includes mapping of Django Models to Odin resources, and RESTful API implementation for Django using Odin resources.
 
 .. image:: https://pypip.in/license/baldr/badge.png
-    :target: https://pypi.python.org/pypi/baldr/ alt: License
+    :target: https://pypi.python.org/pypi/baldr/ 
+    :alt: License
 
 .. image:: https://pypip.in/v/baldr/badge.png
-        :target: https://pypi.python.org/pypi/baldr/
+    :target: https://pypi.python.org/pypi/baldr/
 
 .. image:: https://requires.io/github/timsavage/baldr/requirements.png?branch=master
-   :target: https://requires.io/github/timsavage/baldr/requirements/?branch=master alt: Requirements Status
+    :target: https://requires.io/github/timsavage/baldr/requirements/?branch=master 
+    :alt: Requirements Status
 
 
 Quick links
