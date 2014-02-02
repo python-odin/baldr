@@ -1,6 +1,6 @@
-###########################
-Odin integration for Django
-###########################
+############################
+Odin integration with Django
+############################
 
 Includes mapping of Django Models to Odin resources, and RESTful API implementation for Django using Odin resources.
 
