@@ -12,7 +12,7 @@ class ResourceField(six.with_metaclass(models.SubfieldBase, models.TextField)):
     database seamlessly."""
 
     def __init__(self, resource, *args, **kwargs):
-        assert isinstance(self.resource, odin.Resource)
+        assert issubclass(resource, odin.Resource)
         self.resource = resource
         super(ResourceField, self).__init__(*args, **kwargs)
 
