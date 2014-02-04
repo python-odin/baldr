@@ -116,10 +116,9 @@ class ResourceApi(object):
 
     def dispatch(self, request, request_type, **kwargs):
         allowed_methods = getattr(self, "%s_allowed_methods" % request_type, None)
-
         request_method = self.method_check(request, allowed=allowed_methods)
-        method = getattr(self, "%s_%s" % (request_method, request_type))
 
+        method = getattr(self, "%s_%s" % (request_method, request_type), None)
         if method is None:
             raise NotImplementedError()
 
@@ -138,7 +137,7 @@ class ResourceApi(object):
             raise ImmediateHttpResponse(response)
 
         if not allowed:
-            raise Http404('No `%s` found that matches request.' % self.name.title())
+            raise Http404('No `%s` found that matches request.' % self.api_name.title())
 
         if not request_method in allowed:
             raise ImmediateErrorHttpResponse(405, 40500, "Method not allowed", headers={
