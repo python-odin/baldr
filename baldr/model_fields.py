@@ -5,12 +5,12 @@ import odin
 from odin import exceptions as odin_exceptions
 from odin.codecs import json_codec
 import six
+from baldr import form_fields
 
 
 class ResourceField(six.with_metaclass(models.SubfieldBase, models.TextField)):
     """Field that serializes/de-serializes a Odin resource to the
     database seamlessly."""
-
     def __init__(self, resource, *args, **kwargs):
         assert issubclass(resource, odin.Resource)
         self.resource = resource
@@ -33,6 +33,14 @@ class ResourceField(six.with_metaclass(models.SubfieldBase, models.TextField)):
             return super(ResourceField, self).get_db_prep_save("", connection=connection)
         else:
             return super(ResourceField, self).get_db_prep_save(json_codec.dumps(value), connection=connection)
+
+    def formfield(self, **kwargs):
+        defaults = {
+            'form_class': form_fields.ResourceField,
+            'resource': self.resource
+        }
+        defaults.update(kwargs)
+        return super(ResourceField, self).formfield(**defaults)
 
 # Register field with south.
 try:
