@@ -19,7 +19,7 @@ class ResourceField(six.with_metaclass(models.SubfieldBase, models.TextField)):
     def to_python(self, value):
         if value is None or value == '':
             return self.resource()
-        elif isinstance(value, basestring):
+        elif isinstance(value, six.string_types):
             try:
                 return json_codec.loads(value, self.resource, False)
             except odin_exceptions.ValidationError as ve:
