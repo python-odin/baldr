@@ -24,9 +24,8 @@ class ResourceField(Field):
         self.indent = indent
 
     def prepare_value(self, value):
-        if isinstance(value, odin.Resource):
+        if value is not None:
             return json_codec.dumps(value, indent=self.indent)
-        return value
 
     def to_python(self, value):
         try:
