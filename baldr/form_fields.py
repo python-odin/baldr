@@ -18,13 +18,14 @@ class ResourceField(Field):
         'invalid': _('This field is not a valid %s resource.'),
     }
 
-    def __init__(self, resource, *args, **kwargs):
+    def __init__(self, resource, indent=4, *args, **kwargs):
         super(ResourceField, self).__init__(*args, **kwargs)
         self.resource = resource
+        self.indent = indent
 
     def prepare_value(self, value):
         if isinstance(value, odin.Resource):
-            return json_codec.dumps(value, indent=4)
+            return json_codec.dumps(value, indent=self.indent)
         return value
 
     def to_python(self, value):
