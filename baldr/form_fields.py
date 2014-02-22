@@ -6,46 +6,102 @@ from django.utils.translation import ugettext_lazy as _
 import odin
 from odin import exceptions as odin_exceptions
 from odin.codecs import json_codec
+import six
 
 
 class ResourceField(Field):
-    """
-    Form field that validates a resource.
-    """
+    """Form field that wraps an Odin resource."""
+
     widget = widgets.Textarea
 
     default_error_messages = {
         'invalid': _('This field is not a valid %s resource.'),
     }
 
-    def __init__(self, resource, indent=4, *args, **kwargs):
+    def __init__(self, resource_type, codec=json_codec, indent=4, *args, **kwargs):
+        assert issubclass(resource_type, odin.Resource)
         super(ResourceField, self).__init__(*args, **kwargs)
-        self.resource = resource
+
+        self.resource_type = resource_type
+        self.codec = codec
         self.indent = indent
 
     def prepare_value(self, value):
-        if value is not None:
-            return json_codec.dumps(value, indent=self.indent)
+        if value is None:
+            return ''
+        elif isinstance(value, (list, tuple, odin.Resource)):
+            return self.codec.dumps(value, indent=self.indent)
+        else:
+            return str(value)
 
     def to_python(self, value):
-        try:
-            return json_codec.loads(value, self.resource, full_clean=False)
-        except odin_exceptions.ValidationError as ve:
-            raise django_exceptions.ValidationError(str(ve.message_dict))
-        except ValueError as ve:
-            raise django_exceptions.ValidationError(ve.message)
+        if value is None or value == '':
+            return
+
+        if isinstance(value, self.resource_type):
+            return value
+
+        if isinstance(value, six.string_types):
+            try:
+                return self.codec.loads(value, self.resource_type, full_clean=False)
+            except odin_exceptions.ValidationError as ve:
+                raise django_exceptions.ValidationError(str(ve.message_dict))
+            except ValueError as ve:
+                raise django_exceptions.ValidationError(ve.message)
+
+        raise django_exceptions.ValidationError(
+            self.error_messages['invalid'] % self.resource_type._meta.resource_name, code='invalid')
 
     def validate(self, value):
         super(ResourceField, self).validate(value)
 
-        if value in self.empty_values:
+        if value is None:
             return
 
-        if not isinstance(value, self.resource):
-            raise django_exceptions.ValidationError(
-                self.error_messages['invalid'] % self.resource._meta.name, code='invalid')
+        if isinstance(value, self.resource_type):
+            try:
+                value.full_clean()
+            except odin_exceptions.ValidationError as ve:
+                raise django_exceptions.ValidationError(ve.message_dict)
 
-        try:
-            value.full_clean()
-        except odin_exceptions.ValidationError as ve:
-            raise django_exceptions.ValidationError(ve.message_dict)
+        raise django_exceptions.ValidationError(
+            self.error_messages['invalid'] % self.resource_type._meta.resource_name, code='invalid')
+
+
+class ResourceListField(ResourceField):
+    def to_python(self, value):
+        if value is None or value == '':
+            return
+
+        if isinstance(value, (list, tuple)):
+            return value
+
+        if isinstance(value, six.string_types):
+            try:
+                return self.codec.loads(value, self.resource_type, full_clean=False)
+            except odin_exceptions.ValidationError as ve:
+                raise django_exceptions.ValidationError(str(ve.message_dict))
+            except ValueError as ve:
+                raise django_exceptions.ValidationError(ve.message)
+
+        raise django_exceptions.ValidationError(
+            self.error_messages['invalid'] % self.resource_type._meta.resource_name, code='invalid')
+
+    def validate(self, value):
+        if value is None:
+            return
+
+        elif isinstance(value, (list, tuple)):
+            errors = {}
+            for idx, resource in enumerate(value):
+                try:
+                    super(ResourceField, self).validate(value)
+                except django_exceptions.ValidationError as ve:
+                        errors[idx] = ve.message_dict
+            if errors:
+                raise django_exceptions.ValidationError(errors)
+
+        # Unknown type
+        else:
+            raise django_exceptions.ValidationError(
+                self.error_messages['invalid'] % self.resource_type._meta.resource_name, code='invalid')
