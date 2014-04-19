@@ -120,9 +120,17 @@ class ResourceListField(ResourceField):
 # Register field with south.
 try:
     from south.modelsinspector import add_introspection_rules
-    add_introspection_rules([], [
-        "^baldr\.model_fields\.ResourceField",
-        "^baldr\.model_fields\.ResourceListField",
+    add_introspection_rules([
+        (
+            ['ResourceField', 'ResourceListField'],
+            [],
+            {
+                'resource_type': ['resource_type', {}],
+                'codec': ['codec', {'default': json_codec}],
+            }
+        )
+    ], [
+        "^baldr\.model_fields\.\w+Field"
     ])
 except ImportError:
     pass
