@@ -122,15 +122,13 @@ try:
     from south.modelsinspector import add_introspection_rules
     add_introspection_rules([
         (
-            ['ResourceField', 'ResourceListField'],
+            [ResourceField, ResourceListField],
             [],
             {
                 'resource_type': ['resource_type', {}],
                 'codec': ['codec', {'default': json_codec}],
             }
         )
-    ], [
-        "^baldr\.model_fields\.\w+Field"
-    ])
+    ], ["^baldr\.model_fields\.\w+Field"])
 except ImportError:
     pass
