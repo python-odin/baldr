@@ -10,7 +10,9 @@ import six
 
 
 class ResourceField(Field):
-    """Form field that wraps an Odin resource."""
+    """
+    Form field that wraps an Odin resource.
+    """
 
     widget = widgets.Textarea
 
@@ -18,7 +20,7 @@ class ResourceField(Field):
         'invalid': _('This field is not a valid %s resource.'),
     }
 
-    def __init__(self, resource_type, codec=json_codec, indent=4, *args, **kwargs):
+    def __init__(self, resource_type, codec=json_codec, indent=0, *args, **kwargs):
         assert issubclass(resource_type, odin.Resource)
         super(ResourceField, self).__init__(*args, **kwargs)
 
@@ -69,6 +71,9 @@ class ResourceField(Field):
 
 
 class ResourceListField(ResourceField):
+    """
+    Form field that wraps a list of odin fields.
+    """
     def to_python(self, value):
         if value is None or value == '':
             return

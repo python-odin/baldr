@@ -31,7 +31,6 @@ class ResourceField(six.with_metaclass(models.SubfieldBase, models.TextField)):
         raise django_exceptions.ValidationError(
             'Value provide is not a valid %s resource' % self.resource_type._meta.resource_name)
 
-
     def validate(self, value, model_instance):
         if not self.editable:
             # Skip validation for non-editable fields.
