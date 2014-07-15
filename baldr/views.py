@@ -10,43 +10,6 @@ from odin.exceptions import ValidationError
 from baldr.exceptions import ImmediateErrorHttpResponse, ImmediateHttpResponse
 from baldr.resources import HttpError
 
-
-"""
-Process summary
-                                                                       ^^ Handle Error
-                                                                              |
-                                                                              V
-Request -> Check method -> Check Content-Type/Accepts -> Call method -> Encode result -> Return ->
-                |                   |                         |               |
-                V                   |                         V               |
-            Unknown, Raise Error ^^ V                   Raises Error ^^      Unexpected, Raise Error ^^
-                                Unrecognised, Raise Error ^^
-
-"""
-
-
-class ResourceApi2(object):
-    resource = None
-
-
-class ListApiMixin(ResourceApi2):
-    """
-    Mixin the implements the list support.
-    """
-    pass
-
-
-class DetailApiMixin(ResourceApi2):
-    """
-
-    """
-    pass
-
-
-class SubResourceApi(object):
-    pass
-
-
 CONTENT_TYPE_MAP = {
     json_codec.CONTENT_TYPE: 'json',
     xml_codec.CONTENT_TYPE: 'xml',
