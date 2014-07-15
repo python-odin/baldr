@@ -173,4 +173,4 @@ class ResourceApi(ResourceApiBase):
         return self.dispatch(request, 'list', *args, **kwargs)
 
     def dispatch_detail(self, request, *args, **kwargs):
-        return self.dispatch(request, 'list', *args, **kwargs)
+        return self.dispatch(request, 'detail', *args, **kwargs)
