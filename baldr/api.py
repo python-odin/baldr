@@ -7,8 +7,8 @@ import odin
 from odin.codecs import json_codec
 from odin.exceptions import ValidationError
 from baldr import content_type_resolvers
-from baldr.exceptions import ImmediateErrorHttpResponse
-from baldr.resources import HttpError
+from baldr.exceptions import ImmediateErrorHttpResponse, ImmediateHttpResponse
+from baldr.resources import Error
 
 
 CODECS = {json_codec.CONTENT_TYPE: json_codec}
@@ -27,7 +27,8 @@ class ResourceApiBase(object):
     # The resource this API is modelled on.
     resource = None
 
-    # Handlers used to resolve a content type from a request.
+    # Handlers used to resolve a content-type from a request.
+    # These are checked in the order defined until one returns a content-type
     content_type_resolvers = [
         content_type_resolvers.accepts_header(),
         content_type_resolvers.content_type_header(),
@@ -77,16 +78,19 @@ class ResourceApiBase(object):
             import traceback
 
             the_trace = '\n'.join(traceback.format_exception(*(sys.exc_info())))
-            return HttpError(
+            return Error(
                 status=500,
                 message="An unknown error has occurred, the developers have been notified.",
                 developer_message=str(exception),
                 meta=the_trace
             )
         else:
-            return HttpError(status=500, message="An unknown error has occurred, the developers have been notified.")
+            return Error(status=500, message="An unknown error has occurred, the developers have been notified.")
 
     def wrap_view(self, view):
+        """
+        This method provides the main entry point for URL mappings in the ``base_urls`` method.
+        """
         @csrf_exempt
         def wrapper(request, *args, **kwargs):
             # Resolve content type used to encode/decode request/response content.
@@ -100,21 +104,20 @@ class ResourceApiBase(object):
             callback = getattr(self, view)
             try:
                 result = callback(request, *args, **kwargs)
-            except NotImplementedError:
-                status = 405
-                resource = HttpError(status=status, code=40501, message="This method has not been implemented.")
             except Http404 as e:
                 status = 404
-                resource = HttpError(status=status, code=40400, message=str(e))
-            except ImmediateErrorHttpResponse as e:
-                resource = e.resource
-                status = resource.status
+                resource = Error(status=status, code=40400, message=str(e))
+            except ImmediateHttpResponse as e:
+                response = HttpResponse(codec.dumps(e.resource), content_type=codec.CONTENT_TYPE, status=e.status)
+                for key, value in (e.headers or {}).items():
+                    response[key] = value
+                return response
             except ValidationError as e:
                 status = 400
                 if hasattr(e, 'message_dict'):
-                    resource = HttpError(status=status, code=40000, message="Fields failed validation.")
+                    resource = Error(status=status, code=40000, message="Fields failed validation.", meta=e.message_dict)
                 else:
-                    resource = HttpError(status=status, code=40000, message=str(e))
+                    resource = Error(status=status, code=40000, message=str(e))
             except Exception as e:
                 resource = self.handle_500(request, e)
                 status = resource.status
@@ -133,8 +136,11 @@ class ResourceApiBase(object):
         """
         return []
 
-    def dispatch(self, request, request_type, *args, **kwargs):
-        request_method = self.method_check(request)
+    def dispatch(self, request, request_type, **kwargs):
+        # TODO: Security hook here to check if a request is allowed.
+
+        allowed_methods = getattr(self, "%s_allowed_methods" % request_type, [])
+        request_method = self.method_check(request, allowed_methods)
 
         method = getattr(self, "%s_%s" % (request_method, request_type), None)
         if method is None:
@@ -142,35 +148,33 @@ class ResourceApiBase(object):
 
         return method(request, **kwargs)
 
-    # def method_check(self, request):
-    #     request_method = request.method.lower()
-    #     allows = ','.join(map(str.upper, allowed))
-    #
-    #     if request_method == "options":
-    #         response = HttpError()
-    #         response['Allow'] = allows
-    #         raise ImmediateHttpResponse(response)
-    #
-    #     if not allowed:
-    #         raise Http404('No `%s` found that matches request.' % self.api_name.title())
-    #
-    #     if not request_method in allowed:
-    #         raise ImmediateErrorHttpResponse(405, 40500, "Method not allowed", headers={
-    #             'Allow': allows
-    #         })
-    #
-    #     return request_method
+    def method_check(self, request, allowed):
+        request_method = request.method.lower()
+
+        if not allowed:
+            raise Http404('`%s` not found.' % self.api_name.title())
+
+        if not request_method in allowed:
+            raise ImmediateErrorHttpResponse(405, 40500, "Method not allowed", headers={
+                'Allow': ','.join(map(str.upper, allowed))
+            })
+        return request_method
 
 
 class ResourceApi(ResourceApiBase):
+    list_allowed_methods = ['get']
+    detail_allowed_methods = ['get']
+
     def base_urls(self):
         return super(ResourceApi, self).base_urls() + [
             url(r'^%s/$' % self.api_name.lower(), self.wrap_view('dispatch_list')),
-            url(r'^%s/(?P<id>[-\w]+)/$' % self.api_name.lower(), self.wrap_view('dispatch_detail')),
+            url(r'^%s/(?P<id>\d+)/$' % self.api_name.lower(), self.wrap_view('dispatch_detail')),
         ]
 
-    def dispatch_list(self, request, *args, **kwargs):
-        return self.dispatch(request, 'list', *args, **kwargs)
+    def dispatch_list(self, request, **kwargs):
+        return self.dispatch(request, 'list', **kwargs)
 
-    def dispatch_detail(self, request, *args, **kwargs):
-        return self.dispatch(request, 'detail', *args, **kwargs)
+    def dispatch_detail(self, request, **kwargs):
+        return self.dispatch(request, 'detail', **kwargs)
+
+
