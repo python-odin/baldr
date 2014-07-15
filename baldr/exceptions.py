@@ -1,23 +1,23 @@
 # -*- coding: utf-8 -*-
-from baldr.resources import HttpError
+from baldr.resources import Error
 
 
 class ImmediateHttpResponse(Exception):
     """
     A response that should be returned Immediately!
     """
-    def __init__(self, resource):
+    def __init__(self, resource, status=200, headers=None):
         self.resource = resource
+        self.status = status
+        self.headers = headers
 
 
 class ImmediateErrorHttpResponse(ImmediateHttpResponse):
     """
     An error response that should be returned Immediately!
     """
-    def __init__(self, headers=None, **kwargs):
-        resource = HttpError(**kwargs)
-        if headers:
-            for name, value in headers.items():
-                resource[name] = value
-
-        super(ImmediateErrorHttpResponse, self).__init__(resource)
+    def __init__(self, status, code, message, developer_message=None, meta=None, headers=None):
+        super(ImmediateErrorHttpResponse, self).__init__(
+            Error(status=status, code=code, message=message, developer_message=developer_message, meta=meta),
+            status, headers
+        )
