@@ -2,15 +2,32 @@
 import odin
 
 
-class HttpError(odin.Resource):
+class Listing(odin.Resource):
+    """
+    Response for listing results. This includes offset, count support for paging etc.
+    """
+    class Meta:
+        namespace = None
+
+    # Wrapper to provide code completion
+    def __init__(self, results, limit, offset=0, total_count=None):
+        super(Listing, self).__init__(results=results, limit=limit, offset=offset, total_count=total_count)
+
+    limit = odin.IntegerField(help_text="The resource limit in the result set.")
+    offset = odin.IntegerField(help_text="The offset within the result set.")
+    total_count = odin.IntegerField(null=True, help_text="The total number of items in the result set.")
+    results = odin.ArrayField(help_text="The list of resources.")
+
+
+class Error(odin.Resource):
     """
     Response returned for errors
     """
-    status = odin.IntegerField()
-    code = odin.IntegerField()
-    message = odin.StringField()
-    developer_message = odin.StringField(null=True)
-    meta = odin.StringField(null=True)
-
     class Meta:
         namespace = None
+
+    status = odin.IntegerField(help_text="HTTP status code of the response.")
+    code = odin.IntegerField(help_text="An extended error code for more fine grained error results.")
+    message = odin.StringField(help_text="A message that can be used for an end user.")
+    developer_message = odin.StringField(null=True, help_text="More complex error message suitable for a developer.")
+    meta = odin.StringField(null=True, help_text="Additional meta information that can help to solve issues.")
