@@ -3,12 +3,11 @@ from django.conf import settings
 from django.conf.urls import url, patterns
 from django.http import HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
-import odin
 from odin.codecs import json_codec
 from odin.exceptions import ValidationError
 from baldr import content_type_resolvers
 from baldr.exceptions import ImmediateErrorHttpResponse, ImmediateHttpResponse
-from baldr.resources import Error
+from baldr.resources import Error, Listing
 
 
 CODECS = {json_codec.CONTENT_TYPE: json_codec}
@@ -21,9 +20,6 @@ except ImportError:
 
 
 class ResourceApiBase(object):
-    """
-    Provides an API that returns a specified resource object.
-    """
     # The resource this API is modelled on.
     resource = None
 
@@ -39,8 +35,6 @@ class ResourceApiBase(object):
     registered_codecs = CODECS
 
     def __init__(self, api_name=None):
-        assert issubclass(self.resource, odin.Resource)
-
         self.api_name = api_name if api_name else self.resource._meta.name
 
     @property
@@ -101,20 +95,29 @@ class ResourceApiBase(object):
             try:
                 result = callback(request, *args, **kwargs)
             except Http404 as e:
+                # Item is not found.
                 status = 404
                 resource = Error(status, 40400, str(e))
             except ImmediateHttpResponse as e:
+                # An exception used to return a response immediately, skipping any further processing.
                 response = HttpResponse(codec.dumps(e.resource), content_type=codec.CONTENT_TYPE, status=e.status)
                 for key, value in (e.headers or {}).items():
                     response[key] = value
                 return response
             except ValidationError as e:
+                # Validation of a resource has failed.
                 status = 400
                 if hasattr(e, 'message_dict'):
                     resource = Error(status, 40000, "Fields failed validation.", meta=e.message_dict)
                 else:
                     resource = Error(status, 40000, str(e))
+            except NotImplementedError:
+                # A mixin method has not been implemented, as defining a mixing is explicit this is considered a server
+                # error that should be addressed.
+                status = 501
+                resource = Error(status, 50100, "This method has not been implemented.")
             except Exception as e:
+                # Catch any other exceptions and pass them to the 500 handler for evaluation.
                 resource = self.handle_500(request, e)
                 status = resource.status
             else:
@@ -139,7 +142,7 @@ class ResourceApiBase(object):
         allowed_methods = getattr(self, "%s_allowed_methods" % request_type, [])
         request_method = self.method_check(request, allowed_methods)
 
-        self.check_authorised(request, request_type, request_method)
+        self.handle_authorisation(request, request_type, request_method)
 
         method = getattr(self, "%s_%s" % (request_method, request_type), None)
         if method is None:
@@ -159,7 +162,7 @@ class ResourceApiBase(object):
             })
         return request_method
 
-    def check_authorised(self, request, request_type, request_method):
+    def handle_authorisation(self, request, request_type, request_method):
         """
         Evaluate if a request is authorised.
 
@@ -172,13 +175,16 @@ class ResourceApiBase(object):
 
 
 class ResourceApi(ResourceApiBase):
+    """
+    Provides an API that returns a specified resource object.
+    """
     list_allowed_methods = ['get']
     detail_allowed_methods = ['get']
 
     def base_urls(self):
         return super(ResourceApi, self).base_urls() + [
             url(r'^%s/$' % self.api_name.lower(), self.wrap_view('dispatch_list')),
-            url(r'^%s/(?P<id>\d+)/$' % self.api_name.lower(), self.wrap_view('dispatch_detail')),
+            url(r'^%s/(?P<resource_id>\d+)/$' % self.api_name.lower(), self.wrap_view('dispatch_detail')),
         ]
 
     def dispatch_list(self, request, **kwargs):
@@ -186,3 +192,86 @@ class ResourceApi(ResourceApiBase):
 
     def dispatch_detail(self, request, **kwargs):
         return self.dispatch(request, 'detail', **kwargs)
+
+
+class ListMixin(ResourceApi):
+    """
+    Mixin to the resource API that provides a nice listing API.
+    """
+    def get_list(self, request):
+        offset = int(request.GET.get('offset', 0))
+        limit = int(request.GET.get('limit', 50))
+        return Listing(
+            self.load_resources(request, offset, limit),
+            limit, offset
+        )
+
+    def load_resources(self, request, offset, limit):
+        """
+        Load resources
+        :param limit: Resource count limit.
+        :param offset: Offset within the list to return.
+        :return: List of resource objects.
+        """
+        raise NotImplementedError
+
+
+class CreateMixin(ResourceApi):
+    """
+    Mixin to the resource API to provide a Create API.
+    """
+    def __init__(self, *args, **kwargs):
+        super(CreateMixin, self).__init__(*args, **kwargs)
+        self.list_allowed_methods.append('post')
+
+    def post_detail(self, request):
+        resource = request.codec.loads(request.data, resource=self.resource)
+        return self.create_resource(request, resource)
+
+    def create_resource(self, request, resource):
+        """
+        Create method.
+        """
+        raise NotImplementedError
+
+
+class RetrieveMixin(ResourceApi):
+    """
+    Mixin to the resource API to provide a Retrieve API.
+    """
+    def get_detail(self, request, resource_id):
+        return self.retrieve_resource(request, resource_id)
+
+    def retrieve_resource(self, request, resource_id):
+        raise NotImplementedError
+
+
+class UpdateMixin(ResourceApi):
+    """
+    Mixin to the resource API to provide a Update API.
+    """
+    def __init__(self, *args, **kwargs):
+        super(UpdateMixin, self).__init__(*args, **kwargs)
+        self.detail_allowed_methods.append('post')
+
+    def post_detail(self, request, resource_id):
+        resource = request.codec.loads(request.data, resource=self.resource)
+        return self.update_resource(request, resource_id, resource)
+
+    def update_resource(self, request, resource_id, resource):
+        raise NotImplementedError
+
+
+class DeleteMixin(ResourceApi):
+    """
+    Mixin to the resource API to provide a Delete API.
+    """
+    def __init__(self, *args, **kwargs):
+        super(DeleteMixin, self).__init__(*args, **kwargs)
+        self.detail_allowed_methods.append('delete')
+
+    def post_detail(self, request, resource_id):
+        return self.delete_resource(request, resource_id)
+
+    def delete_resource(self, request, resource_id):
+        raise NotImplementedError
