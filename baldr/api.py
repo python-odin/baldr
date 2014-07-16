@@ -202,11 +202,11 @@ class ListMixin(ResourceApi):
         offset = int(request.GET.get('offset', 0))
         limit = int(request.GET.get('limit', 50))
         return Listing(
-            self.load_resources(request, offset, limit),
+            self.list_resources(request, offset, limit),
             limit, offset
         )
 
-    def load_resources(self, request, offset, limit):
+    def list_resources(self, request, offset, limit):
         """
         Load resources
         :param limit: Resource count limit.
