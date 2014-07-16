@@ -11,17 +11,17 @@ class Listing(odin.Resource):
 
     # Wrapper to provide code completion
     def __init__(self, results, limit, offset=0, total_count=None):
-        super(Listing, self).__init__(results=results, limit=limit, offset=offset, total_count=total_count)
+        super(Listing, self).__init__(results, limit, offset, total_count)
 
-    limit = odin.IntegerField(help_text="The resource limit in the result set.")
-    offset = odin.IntegerField(help_text="The offset within the result set.")
-    total_count = odin.IntegerField(null=True, help_text="The total number of items in the result set.")
     results = odin.ArrayField(help_text="The list of resources.")
+    limit = odin.IntegerField(help_text="The resource limit in the result set.")
+    offset = odin.IntegerField(default=0, help_text="The offset within the result set.")
+    total_count = odin.IntegerField(null=True, help_text="The total number of items in the result set.")
 
 
 class Error(odin.Resource):
     """
-    Response returned for errors
+    Response returned for errors.
     """
     class Meta:
         namespace = None

@@ -78,14 +78,10 @@ class ResourceApiBase(object):
             import traceback
 
             the_trace = '\n'.join(traceback.format_exception(*(sys.exc_info())))
-            return Error(
-                status=500,
-                message="An unknown error has occurred, the developers have been notified.",
-                developer_message=str(exception),
-                meta=the_trace
-            )
+            return Error(500, 50000, "An unknown error has occurred, the developers have been notified.",
+                         str(exception), the_trace)
         else:
-            return Error(status=500, message="An unknown error has occurred, the developers have been notified.")
+            return Error(500, 50000, "An unknown error has occurred, the developers have been notified.")
 
     def wrap_view(self, view):
         """
@@ -106,7 +102,7 @@ class ResourceApiBase(object):
                 result = callback(request, *args, **kwargs)
             except Http404 as e:
                 status = 404
-                resource = Error(status=status, code=40400, message=str(e))
+                resource = Error(status, 40400, str(e))
             except ImmediateHttpResponse as e:
                 response = HttpResponse(codec.dumps(e.resource), content_type=codec.CONTENT_TYPE, status=e.status)
                 for key, value in (e.headers or {}).items():
@@ -115,9 +111,9 @@ class ResourceApiBase(object):
             except ValidationError as e:
                 status = 400
                 if hasattr(e, 'message_dict'):
-                    resource = Error(status=status, code=40000, message="Fields failed validation.", meta=e.message_dict)
+                    resource = Error(status, 40000, "Fields failed validation.", meta=e.message_dict)
                 else:
-                    resource = Error(status=status, code=40000, message=str(e))
+                    resource = Error(status, 40000, str(e))
             except Exception as e:
                 resource = self.handle_500(request, e)
                 status = resource.status
@@ -137,10 +133,13 @@ class ResourceApiBase(object):
         return []
 
     def dispatch(self, request, request_type, **kwargs):
-        # TODO: Security hook here to check if a request is allowed.
-
+        """
+        Primary method used to dispatch incoming requests to the appropriate method.
+        """
         allowed_methods = getattr(self, "%s_allowed_methods" % request_type, [])
         request_method = self.method_check(request, allowed_methods)
+
+        self.check_authorised(request, request_type, request_method)
 
         method = getattr(self, "%s_%s" % (request_method, request_type), None)
         if method is None:
@@ -160,6 +159,17 @@ class ResourceApiBase(object):
             })
         return request_method
 
+    def check_authorised(self, request, request_type, request_method):
+        """
+        Evaluate if a request is authorised.
+
+        :param request: The current Django request object.
+        :param request_type: The current request type.
+        :param request_method: The current request method.
+
+        """
+        pass
+
 
 class ResourceApi(ResourceApiBase):
     list_allowed_methods = ['get']
@@ -176,5 +186,3 @@ class ResourceApi(ResourceApiBase):
 
     def dispatch_detail(self, request, **kwargs):
         return self.dispatch(request, 'detail', **kwargs)
-
-

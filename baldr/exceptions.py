@@ -18,6 +18,6 @@ class ImmediateErrorHttpResponse(ImmediateHttpResponse):
     """
     def __init__(self, status, code, message, developer_message=None, meta=None, headers=None):
         super(ImmediateErrorHttpResponse, self).__init__(
-            Error(status=status, code=code, message=message, developer_message=developer_message, meta=meta),
+            Error(status, code, message, developer_message, meta),
             status, headers
         )
