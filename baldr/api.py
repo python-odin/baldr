@@ -1,6 +1,6 @@
 # coding=utf-8
 from django.conf import settings
-from django.conf.urls import url, patterns
+from django.conf.urls import url, patterns, include
 from django.http import HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 from odin.codecs import json_codec
@@ -35,7 +35,10 @@ class ResourceApiBase(object):
     registered_codecs = CODECS
 
     def __init__(self, api_name=None):
-        self.api_name = api_name if api_name else self.resource._meta.name
+        if api_name:
+            self.api_name = api_name
+        elif not hasattr(self, 'api_name'):
+            self.api_name = "%ss" % self.resource._meta.name
 
     @property
     def urls(self):
@@ -275,3 +278,29 @@ class DeleteMixin(ResourceApi):
 
     def delete_resource(self, request, resource_id):
         raise NotImplementedError
+
+
+class ApiCollection(object):
+    """
+    Collection of several resource API's.
+
+    Along with helper methods for building URL patterns.
+    """
+    def __init__(self, api_name='api', *resource_apis):
+        self.api_name = api_name
+        self.resource_apis = resource_apis
+
+    @property
+    def urls(self):
+        if not hasattr(self, '_urls'):
+            urls = []
+            for resource_api in self.resource_apis:
+                urls.extend(resource_api.urls)
+            self._urls = urls
+        return self._urls
+
+    def include(self, namespace=None):
+        return include(self.urls, namespace)
+
+    def patterns(self):
+        return [url(r'^%s/' % self.api_name, self.include())]
