@@ -306,7 +306,7 @@ class ApiCollection(object):
 
     Along with helper methods for building URL patterns.
     """
-    def __init__(self, api_name='api', *resource_apis):
+    def __init__(self, *resource_apis, api_name='api'):
         self.api_name = api_name
         self.resource_apis = resource_apis
 
