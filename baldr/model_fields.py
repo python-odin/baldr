@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.core import exceptions as django_exceptions
 from django.db import models
-import odin
 from odin import exceptions as odin_exceptions
 from odin.codecs import json_codec
 import six
@@ -13,7 +12,6 @@ class ResourceField(six.with_metaclass(models.SubfieldBase, models.TextField)):
     form_class = form_fields.ResourceField
 
     def __init__(self, resource_type, codec=json_codec, *args, **kwargs):
-        #assert issubclass(resource_type, odin.Resource)
         super(ResourceField, self).__init__(*args, **kwargs)
         self.resource_type = resource_type
         self.codec = codec

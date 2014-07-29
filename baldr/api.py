@@ -159,7 +159,7 @@ class ResourceApiBase(object):
         if not allowed:
             raise Http404('`%s` not found.' % self.api_name)
 
-        if not request_method in allowed:
+        if request_method not in allowed:
             raise ImmediateErrorHttpResponse(405, 40500, "Method not allowed", headers={
                 'Allow': ','.join(map(str.upper, allowed))
             })
@@ -195,26 +195,6 @@ class ResourceApi(ResourceApiBase):
 
     def dispatch_detail(self, request, **kwargs):
         return self.dispatch(request, 'detail', **kwargs)
-
-
-# class SubResourceMixin(ResourceApi):
-#     """
-#     Mixin to add support for sub resources to the resource API.
-#     """
-#     list_allowed_methods = ['get']
-#     detail_allowed_methods = ['get']
-#
-#     def base_urls(self):
-#         return super(SubResourceMixin, self).base_urls() + [
-#             url(r'^%s/(?P<sub_resource>[-a-z]+)/$' % self.api_name.lower(), self.wrap_view('dispatch_list_sub')),
-#             url(r'^%s/(?P<resource_id>\d+)/(?P<sub_resource>[-a-z]+)/$' % self.api_name.lower(), self.wrap_view('dispatch_detail_sub')),
-#         ]
-#
-#     def dispatch_list_sub(self, request, sub_resource, **kwargs):
-#         return self.dispatch(request, 'sub_list_%s' % sub_resource, **kwargs)
-#
-#     def dispatch_detail_sub(self, request, sub_resource, **kwargs):
-#         return self.dispatch(request, 'sub_detail_%s' % sub_resource, **kwargs)
 
 
 class ListMixin(ResourceApi):
@@ -306,8 +286,8 @@ class ApiCollection(object):
 
     Along with helper methods for building URL patterns.
     """
-    def __init__(self, *resource_apis, api_name='api'):
-        self.api_name = api_name
+    def __init__(self, *resource_apis, **kwargs):
+        self.api_name = kwargs.pop('api_name', 'api')
         self.resource_apis = resource_apis
 
     @property
