@@ -12,10 +12,3 @@ class ModelFieldResolver(FieldResolverBase):
         return {f.attname: f for f in self.obj._meta.fields}
 
 registration.register_field_resolver(ModelFieldResolver, models.Model)
-
-
-class ModelResource(Resource):
-    """
-
-    """
-    pass
