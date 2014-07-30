@@ -1,3 +1,0 @@
-six
-odin>=0.5.1
-django>=1.5
