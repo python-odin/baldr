@@ -36,5 +36,5 @@ Requires
 ********
 
 * six
-* odin >= 0.4.3
+* odin >= 0.5
 * django >= 1.5
