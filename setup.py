@@ -14,7 +14,7 @@ setup(
     author_email='tim.savage@poweredbypenguins.org',
     description='Odin integration to Django',
     long_description=long_description,
-    packages=find_packages(),
+    packages=find_packages(exclude=("django_test_runner",)),
     install_requires=['six', 'odin>=0.5', 'django>=1.5'],
 
     classifiers=[
