@@ -40,12 +40,18 @@ class ResourceApiBase(object):
         elif not hasattr(self, 'api_name'):
             self.api_name = "%ss" % self.resource._meta.name
 
+    def url(self, regex, view, kwargs=None, name=None, prefix=''):
+        """
+        Behaves like the django built in ``url`` method but prefixes the URL with the API name.
+        """
+        return url(r'^%s/%s' % (self.api_name.lower(), regex), view, kwargs, name, prefix)
+
     @property
     def urls(self):
         """
         Return url conf for resource object.
         """
-        return patterns('', *self.base_urls())
+        return self.base_urls()
 
     def resolve_content_type(self, request):
         """
@@ -186,8 +192,8 @@ class ResourceApi(ResourceApiBase):
 
     def base_urls(self):
         return super(ResourceApi, self).base_urls() + [
-            url(r'^%s/$' % self.api_name.lower(), self.wrap_view('dispatch_list')),
-            url(r'^%s/(?P<resource_id>\d+)/$' % self.api_name.lower(), self.wrap_view('dispatch_detail')),
+            self.url(r'$', self.wrap_view('dispatch_list')),
+            self.url(r'(?P<resource_id>\d+)/$', self.wrap_view('dispatch_detail')),
         ]
 
     def dispatch_list(self, request, **kwargs):
