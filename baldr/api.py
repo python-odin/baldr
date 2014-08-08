@@ -162,7 +162,7 @@ class ResourceApiBase(object):
     def method_check(self, request, allowed):
         request_method = request.method.lower()
 
-        if not allowed:
+        if allowed is None:
             raise Http404('`%s` not found.' % self.api_name)
 
         if request_method not in allowed:
@@ -189,11 +189,20 @@ class ResourceApi(ResourceApiBase):
     """
     list_allowed_methods = ['get']
     detail_allowed_methods = ['get']
+    resource_id_regex = '\d+'
 
     def base_urls(self):
         return super(ResourceApi, self).base_urls() + [
-            self.url(r'$', self.wrap_view('dispatch_list')),
-            self.url(r'(?P<resource_id>\d+)/$', self.wrap_view('dispatch_detail')),
+            # List URL
+            self.url(
+                r'$',
+                self.wrap_view('dispatch_list')
+            ),
+            # Detail URL
+            self.url(
+                r'(?P<resource_id>%s)/$' % self.resource_id_regex,
+                self.wrap_view('dispatch_detail')
+            )
         ]
 
     def dispatch_list(self, request, **kwargs):
@@ -233,13 +242,22 @@ class CreateMixin(ResourceApi):
         super(CreateMixin, self).__init__(*args, **kwargs)
         self.list_allowed_methods.append('post')
 
-    def post_detail(self, request):
+    def post_list(self, request):
         resource = request.codec.loads(request.data, resource=self.resource)
-        return self.create_resource(request, resource)
+        return self.create_resource(request, resource, False)
 
-    def create_resource(self, request, resource):
+    def put_list(self, request):
+        resource = request.codec.loads(request.data, resource=self.resource)
+        return self.create_resource(request, resource, True)
+
+    def create_resource(self, request, resource, is_complete):
         """
         Create method.
+
+        :param request: Django HttpRequest object.
+        :param resource: The resource included with the request.
+        :param is_complete: This is a complete resource (ie a PUT method).
+
         """
         raise NotImplementedError
 
@@ -248,11 +266,11 @@ class RetrieveMixin(ResourceApi):
     """
     Mixin to the resource API to provide a Retrieve API.
     """
-    def get_detail(self, request, resource_id):
-        return self.retrieve_resource(request, resource_id)
-
     def retrieve_resource(self, request, resource_id):
         raise NotImplementedError
+
+    # The get method is just an alias
+    get_detail = retrieve_resource
 
 
 class UpdateMixin(ResourceApi):
@@ -263,11 +281,23 @@ class UpdateMixin(ResourceApi):
         super(UpdateMixin, self).__init__(*args, **kwargs)
         self.detail_allowed_methods.append('post')
 
-    def post_detail(self, request, resource_id):
+    def post_list(self, request, resource_id):
         resource = request.codec.loads(request.data, resource=self.resource)
-        return self.update_resource(request, resource_id, resource)
+        return self.update_resource(request, resource_id, resource, False)
 
-    def update_resource(self, request, resource_id, resource):
+    def put_list(self, request, resource_id):
+        resource = request.codec.loads(request.data, resource=self.resource)
+        return self.update_resource(request, resource_id, resource, True)
+
+    def update_resource(self, request, resource_id, resource, is_complete):
+        """
+        Update method.
+
+        :param request: Django HttpRequest object.
+        :param resource: The resource included with the request.
+        :param is_complete: This is a complete resource (ie a PUT method).
+
+        """
         raise NotImplementedError
 
 
@@ -279,11 +309,36 @@ class DeleteMixin(ResourceApi):
         super(DeleteMixin, self).__init__(*args, **kwargs)
         self.detail_allowed_methods.append('delete')
 
-    def post_detail(self, request, resource_id):
-        return self.delete_resource(request, resource_id)
-
     def delete_resource(self, request, resource_id):
         raise NotImplementedError
+
+    # The delete method is just an alias
+    delete_detail = delete_resource
+
+
+class ActionMixin(ResourceApi):
+    """
+    Mixin to the resource API to provide support for sub resources, actions, aggregations.
+
+    To hook up a action mixin specify a method that matches the type of request you want to handle ie::
+
+        def get_summary_action(self, request, resource_id):
+            pass
+
+    """
+    action_allowed_methods = ['get']
+
+    def base_urls(self):
+        return super(ResourceApi, self).base_urls() + [
+            # Action URL
+            self.url(
+                r'(?P<resource_id>%s)/(?P<action>[-\w\d]+)/$' % self.resource_id_regex,
+                self.wrap_view('dispatch_action')
+            ),
+        ]
+
+    def dispatch_action(self, request, action, **kwargs):
+        return self.dispatch(request, "%s_action" % action, **kwargs)
 
 
 class ApiCollection(object):
