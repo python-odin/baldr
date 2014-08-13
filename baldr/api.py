@@ -42,9 +42,13 @@ class ResourceApiBase(object):
 
     def url(self, regex, view, kwargs=None, name=None, prefix=''):
         """
-        Behaves like the django built in ``url`` method but prefixes the URL with the API name.
+        Behaves like the django built in ``url`` method but constrains the URL to the API name.
+
+        :param regex: This should be a part regex that applies only to the targeted method ie::
+
+            self.url("(\d+)", ...)
         """
-        return url(r'^%s/%s' % (self.api_name.lower(), regex), view, kwargs, name, prefix)
+        return url(r'^%s/%s/?$' % (self.api_name.lower(), regex), view, kwargs, name, prefix)
 
     @property
     def urls(self):
@@ -195,12 +199,12 @@ class ResourceApi(ResourceApiBase):
         return super(ResourceApi, self).base_urls() + [
             # List URL
             self.url(
-                r'$',
+                r'',
                 self.wrap_view('dispatch_list')
             ),
             # Detail URL
             self.url(
-                r'(?P<resource_id>%s)/$' % self.resource_id_regex,
+                r'(?P<resource_id>%s)' % self.resource_id_regex,
                 self.wrap_view('dispatch_detail')
             )
         ]
@@ -210,6 +214,37 @@ class ResourceApi(ResourceApiBase):
 
     def dispatch_detail(self, request, **kwargs):
         return self.dispatch(request, 'detail', **kwargs)
+
+
+class ActionMixin(ResourceApi):
+    """
+    Mixin to the resource API to provide support for sub resources, actions, aggregations.
+
+    To hook up a action mixin specify a method that matches the type of request you want to handle ie::
+
+        def get_summary_action(self, request, resource_id):
+            pass
+
+    """
+    def base_urls(self):
+        return super(ResourceApi, self).base_urls() + [
+            # List Action URL
+            self.url(
+                r'(?P<action>[-\w\d]+)',
+                self.wrap_view('dispatch_list_action')
+            ),
+            # Detail Action URL
+            self.url(
+                r'(?P<resource_id>%s)/(?P<action>[-\w\d]+)' % self.resource_id_regex,
+                self.wrap_view('dispatch_detail_action')
+            ),
+        ]
+
+    def dispatch_list_action(self, request, action, **kwargs):
+        return self.dispatch(request, "%s_action" % action, **kwargs)
+
+    def dispatch_detail_action(self, request, action, **kwargs):
+        return self.dispatch(request, "%s_action" % action, **kwargs)
 
 
 class ListMixin(ResourceApi):
@@ -314,31 +349,6 @@ class DeleteMixin(ResourceApi):
 
     # The delete method is just an alias
     delete_detail = delete_resource
-
-
-class ActionMixin(ResourceApi):
-    """
-    Mixin to the resource API to provide support for sub resources, actions, aggregations.
-
-    To hook up a action mixin specify a method that matches the type of request you want to handle ie::
-
-        def get_summary_action(self, request, resource_id):
-            pass
-
-    """
-    action_allowed_methods = ['get']
-
-    def base_urls(self):
-        return super(ResourceApi, self).base_urls() + [
-            # Action URL
-            self.url(
-                r'(?P<resource_id>%s)/(?P<action>[-\w\d]+)/$' % self.resource_id_regex,
-                self.wrap_view('dispatch_action')
-            ),
-        ]
-
-    def dispatch_action(self, request, action, **kwargs):
-        return self.dispatch(request, "%s_action" % action, **kwargs)
 
 
 class ApiCollection(object):
