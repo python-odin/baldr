@@ -241,10 +241,10 @@ class ActionMixin(ResourceApi):
         ]
 
     def dispatch_list_action(self, request, action, **kwargs):
-        return self.dispatch(request, "%s_action" % action, **kwargs)
+        return self.dispatch(request, "%s_list" % action, **kwargs)
 
     def dispatch_detail_action(self, request, action, **kwargs):
-        return self.dispatch(request, "%s_action" % action, **kwargs)
+        return self.dispatch(request, "%s_detail" % action, **kwargs)
 
 
 class ListMixin(ResourceApi):
