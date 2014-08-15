@@ -5,12 +5,12 @@ python:
 
 env:
   - DJANGO_PACKAGE="django>=1.6,<1.7"
-  - DJANGO_PACKAGE="https://www.djangoproject.com/download/1.7c1/tarball/"
+  - DJANGO_PACKAGE="https://www.djangoproject.com/download/1.7c2/tarball/"
 
 matrix:
   # Release candiate status
   allow_failures:
-  - env: DJANGO_PACKAGE="https://www.djangoproject.com/download/1.7c1/tarball/"
+  - env: DJANGO_PACKAGE="https://www.djangoproject.com/download/1.7c2/tarball/"
 
   # Include specific versions Django for Python 3
   include:
@@ -19,7 +19,7 @@ matrix:
   - python: "3.4"
     env: DJANGO_PACKAGE="django>=1.6,<1.7"
   - python: "3.4"
-    env: DJANGO_PACKAGE="https://www.djangoproject.com/download/1.7c1/tarball/"
+    env: DJANGO_PACKAGE="https://www.djangoproject.com/download/1.7c2/tarball/"
 
 install:
   - pip install -q $DJANGO_PACKAGE six git+git@github.com:timsavage/odin.git#egg=Odin
