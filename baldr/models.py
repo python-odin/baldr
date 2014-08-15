@@ -31,7 +31,6 @@ class ModelResourceMixin(odin.Resource):
 
         A mapping must be defined for conversion between this resource and to_resource or an exception will be raised.
         """
-        assert model is cls._model
         mapping = registration.get_mapping(cls._model, cls)
         return mapping(model, context).convert(**field_values)
 
