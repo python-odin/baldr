@@ -16,10 +16,24 @@ registration.register_field_resolver(ModelFieldResolver, models.Model)
 
 
 class ModelResourceMixin(odin.Resource):
+    """
+    Mixin that adds some helper methods for working with resources generated from models.
+    """
     class Meta:
         abstract = True
 
     _model = None
+
+    @classmethod
+    def from_model(cls, model, context=None, **field_values):
+        """
+        Convert this resource into a specified to resource.
+
+        A mapping must be defined for conversion between this resource and to_resource or an exception will be raised.
+        """
+        assert model is cls._model
+        mapping = registration.get_mapping(cls._model, cls)
+        return mapping(model, context).convert(**field_values)
 
     def save(self, context=None, save=True):
         """
