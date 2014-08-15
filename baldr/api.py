@@ -1,6 +1,6 @@
 # coding=utf-8
 from django.conf import settings
-from django.conf.urls import url, patterns, include
+from django.conf.urls import url, include
 from django.http import HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 from odin.codecs import json_codec
