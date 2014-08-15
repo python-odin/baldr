@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.db import models
+import sys
 from odin import registration
 import odin
 from odin.mapping import FieldResolverBase, mapping_factory
@@ -108,6 +109,8 @@ def model_resource_factory(model, base_resource=odin.Resource, resource_mixins=N
             attrs[mf.attname] = field
 
     # Setup other require attributes and create type
+    if isinstance(module, str):
+        module = sys.modules[module]
     attrs['__module__'] = module or model.__module__
     attrs['_model'] = model
     resource_type = type(model_opts.object_name, bases, attrs)
