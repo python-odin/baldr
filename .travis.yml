@@ -22,7 +22,7 @@ matrix:
     env: DJANGO_PACKAGE="https://www.djangoproject.com/download/1.7c2/tarball/"
 
 install:
-  - pip install -q $DJANGO_PACKAGE six -egit+https@github.com:timsavage/odin.git#egg=Odin
+  - pip install -q $DJANGO_PACKAGE six -egit+https://github.com/timsavage/odin.git#egg=Odin
   - pip install coveralls
 
 script: coverage run django_test_runner/__main__.py baldr
