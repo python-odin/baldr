@@ -304,8 +304,8 @@ class RetrieveMixin(ResourceApi):
     def retrieve_resource(self, request, resource_id):
         raise NotImplementedError
 
-    # The get method is just an alias
-    get_detail = retrieve_resource
+    def get_detail(self, request, resource_id):
+        return self.retrieve_resource(request, resource_id)
 
 
 class UpdateMixin(ResourceApi):
@@ -347,8 +347,8 @@ class DeleteMixin(ResourceApi):
     def delete_resource(self, request, resource_id):
         raise NotImplementedError
 
-    # The delete method is just an alias
-    delete_detail = delete_resource
+    def delete_detail(self, request, resource_id):
+        return self.delete_resource(request, resource_id)
 
 
 class ApiCollection(object):
