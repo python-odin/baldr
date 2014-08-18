@@ -14,9 +14,10 @@ CODECS = {json_codec.CONTENT_TYPE: json_codec}
 # Attempt to load other codecs that have dependencies
 try:
     from odin.codecs import msgpack_codec
-    CODECS[msgpack_codec.CONTENT_TYPE] = msgpack_codec
 except ImportError:
     pass
+else:
+    CODECS[msgpack_codec.CONTENT_TYPE] = msgpack_codec
 
 
 class ResourceApiBase(object):
@@ -155,13 +156,27 @@ class ResourceApiBase(object):
         allowed_methods = getattr(self, "%s_allowed_methods" % request_type, [])
         request_method = self.method_check(request, allowed_methods)
 
-        self.handle_authorisation(request, request_type, request_method)
+        request.type = request_type
+
+        self.handle_authorisation(request)
 
         method = getattr(self, "%s_%s" % (request_method, request_type), None)
         if method is None:
             raise NotImplementedError()
 
-        return method(request, **kwargs)
+        # Allow for a pre_dispatch hook, a response from pre_dispatch would indicate an override of kwargs
+        if hasattr(self, 'pre_dispatch'):
+            response = self.pre_dispatch(request, **kwargs)
+            if response is not None:
+                kwargs = response
+
+        result = method(request, **kwargs)
+
+        # Allow for a post_dispatch hook, the response of which is returned
+        if hasattr(self, 'post_dispatch'):
+            return self.post_dispatch(request, result)
+        else:
+            return result
 
     def method_check(self, request, allowed):
         request_method = request.method.lower()
@@ -175,13 +190,11 @@ class ResourceApiBase(object):
             })
         return request_method
 
-    def handle_authorisation(self, request, request_type, request_method):
+    def handle_authorisation(self, request):
         """
         Evaluate if a request is authorised.
 
         :param request: The current Django request object.
-        :param request_type: The current request type.
-        :param request_method: The current request method.
 
         """
         pass
@@ -193,18 +206,19 @@ class ResourceApi(ResourceApiBase):
     """
     list_allowed_methods = ['get']
     detail_allowed_methods = ['get']
-    resource_id_regex = '\d+'
+    regex_prefix = r''
+    resource_id_regex = r'\d+'
 
     def base_urls(self):
         return super(ResourceApi, self).base_urls() + [
             # List URL
             self.url(
-                r'',
+                self.regex_prefix + r'%s',
                 self.wrap_view('dispatch_list')
             ),
             # Detail URL
             self.url(
-                r'(?P<resource_id>%s)' % self.resource_id_regex,
+                self.regex_prefix + r'(?P<resource_id>%s)' % self.resource_id_regex,
                 self.wrap_view('dispatch_detail')
             )
         ]
@@ -230,12 +244,12 @@ class ActionMixin(ResourceApi):
         return super(ResourceApi, self).base_urls() + [
             # List Action URL
             self.url(
-                r'(?P<action>[-\w\d]+)',
+                self.regex_prefix + r'(?P<action>[-\w\d]+)',
                 self.wrap_view('dispatch_list_action')
             ),
             # Detail Action URL
             self.url(
-                r'(?P<resource_id>%s)/(?P<action>[-\w\d]+)' % self.resource_id_regex,
+                self.regex_prefix + r'(?P<resource_id>%s)/(?P<action>[-\w\d]+)' % self.resource_id_regex,
                 self.wrap_view('dispatch_detail_action')
             ),
         ]
@@ -262,9 +276,11 @@ class ListMixin(ResourceApi):
     def list_resources(self, request, offset, limit):
         """
         Load resources
+
         :param limit: Resource count limit.
         :param offset: Offset within the list to return.
         :return: List of resource objects.
+
         """
         raise NotImplementedError
 
@@ -301,11 +317,18 @@ class RetrieveMixin(ResourceApi):
     """
     Mixin to the resource API to provide a Retrieve API.
     """
-    def retrieve_resource(self, request, resource_id):
-        raise NotImplementedError
-
     def get_detail(self, request, resource_id):
         return self.retrieve_resource(request, resource_id)
+
+    def retrieve_resource(self, request, resource_id):
+        """
+        Retrieve method
+
+        :param request: Django HttpRequest object.
+        :param resource_id: The ID of the resource to retrieve.
+
+        """
+        raise NotImplementedError
 
 
 class UpdateMixin(ResourceApi):
@@ -329,6 +352,7 @@ class UpdateMixin(ResourceApi):
         Update method.
 
         :param request: Django HttpRequest object.
+        :param resource_id: The ID of the resource to update.
         :param resource: The resource included with the request.
         :param is_complete: This is a complete resource (ie a PUT method).
 
@@ -344,11 +368,18 @@ class DeleteMixin(ResourceApi):
         super(DeleteMixin, self).__init__(*args, **kwargs)
         self.detail_allowed_methods.append('delete')
 
-    def delete_resource(self, request, resource_id):
-        raise NotImplementedError
-
     def delete_detail(self, request, resource_id):
         return self.delete_resource(request, resource_id)
+
+    def delete_resource(self, request, resource_id):
+        """
+        Delete method
+
+        :param request: Django HttpRequest object.
+        :param resource_id: The ID of the resource to delete.
+
+        """
+        raise NotImplementedError
 
 
 class ApiCollection(object):

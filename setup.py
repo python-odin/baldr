@@ -18,7 +18,8 @@ setup(
     install_requires=['six', 'odin>=0.5.2', 'django>=1.5'],
 
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 3 - Alpha',
+        'Framework :: Django',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
