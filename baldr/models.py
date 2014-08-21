@@ -44,7 +44,7 @@ class ModelResourceMixin(odin.Resource):
             model.save()
         return model
 
-    def update_model(self, model, context=None, save=True):
+    def update(self, model, context=None, save=True):
         """
         Update an existing model from this model.
         """
