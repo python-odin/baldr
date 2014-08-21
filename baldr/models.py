@@ -23,7 +23,7 @@ class ModelResourceMixin(odin.Resource):
     class Meta:
         abstract = True
 
-    _model = None
+    model = None
 
     @classmethod
     def from_model(cls, model, context=None, **field_values):
@@ -32,14 +32,24 @@ class ModelResourceMixin(odin.Resource):
 
         A mapping must be defined for conversion between this resource and to_resource or an exception will be raised.
         """
-        mapping = registration.get_mapping(cls._model, cls)
+        mapping = registration.get_mapping(cls.model, cls)
         return mapping(model, context).convert(**field_values)
 
     def save(self, context=None, save=True):
         """
         Save this resource instance to the database.
         """
-        model = self.convert_to(self._model, context)
+        model = self.convert_to(self.model, context)
+        if save:
+            model.save()
+        return model
+
+    def update_model(self, model, context=None, save=True):
+        """
+        Update an existing model from this model.
+        """
+        mapping = registration.get_mapping(self.__class__, self.model)
+        mapping(self, context).update(model)
         if save:
             model.save()
         return model
@@ -112,7 +122,7 @@ def model_resource_factory(model, base_resource=odin.Resource, resource_mixins=N
     if isinstance(module, str):
         module = sys.modules[module]
     attrs['__module__'] = module or model.__module__
-    attrs['_model'] = model
+    attrs['model'] = model
     resource_type = type(model_opts.object_name, bases, attrs)
 
     # Generate mappings
