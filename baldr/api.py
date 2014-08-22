@@ -139,8 +139,11 @@ class ResourceApiBase(object):
                     resource, status = result
                 else:
                     resource = result
-                    status = 200
-            return HttpResponse(codec.dumps(resource), content_type=codec.CONTENT_TYPE, status=status)
+                    status = 204 if result is None else 200  # Return 204 (No Content) if result is None.
+            if resource is None:
+                return HttpResponse(status=status)
+            else:
+                return HttpResponse(codec.dumps(resource), content_type=codec.CONTENT_TYPE, status=status)
         return wrapper
 
     def base_urls(self):
@@ -295,7 +298,9 @@ class CreateMixin(ResourceApi):
 
     def post_list(self, request):
         resource = request.codec.loads(request.data, resource=self.resource)
-        return self.create_resource(request, resource, False)
+        result = self.create_resource(request, resource, False)
+        if result is None:
+            return
 
     def put_list(self, request):
         resource = request.codec.loads(request.data, resource=self.resource)
