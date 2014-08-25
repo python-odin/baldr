@@ -34,6 +34,7 @@ class ResourceApiBase(object):
 
     # Codecs that are supported for Encoding/Decoding resources.
     registered_codecs = CODECS
+    url_prefix = r''
 
     def __init__(self, api_name=None):
         if api_name:
@@ -49,7 +50,7 @@ class ResourceApiBase(object):
 
             self.url("(\d+)", ...)
         """
-        return url(r'^%s/%s/?$' % (self.api_name.lower(), regex), view, kwargs, name, prefix)
+        return url(r'^%s/%s/?$' % (self.url_prefix + self.api_name.lower(), regex), view, kwargs, name, prefix)
 
     @property
     def urls(self):
@@ -209,19 +210,18 @@ class ResourceApi(ResourceApiBase):
     """
     list_allowed_methods = ['get']
     detail_allowed_methods = ['get']
-    regex_prefix = r''
     resource_id_regex = r'\d+'
 
     def base_urls(self):
         return super(ResourceApi, self).base_urls() + [
             # List URL
             self.url(
-                self.regex_prefix + r'%s',
+                r'',
                 self.wrap_view('dispatch_list')
             ),
             # Detail URL
             self.url(
-                self.regex_prefix + r'(?P<resource_id>%s)' % self.resource_id_regex,
+                r'(?P<resource_id>%s)' % self.resource_id_regex,
                 self.wrap_view('dispatch_detail')
             )
         ]
@@ -247,12 +247,12 @@ class ActionMixin(ResourceApi):
         return super(ResourceApi, self).base_urls() + [
             # List Action URL
             self.url(
-                self.regex_prefix + r'(?P<action>[-\w\d]+)',
+                r'(?P<action>[-\w\d]+)',
                 self.wrap_view('dispatch_list_action')
             ),
             # Detail Action URL
             self.url(
-                self.regex_prefix + r'(?P<resource_id>%s)/(?P<action>[-\w\d]+)' % self.resource_id_regex,
+                r'(?P<resource_id>%s)/(?P<action>[-\w\d]+)' % self.resource_id_regex,
                 self.wrap_view('dispatch_detail_action')
             ),
         ]
