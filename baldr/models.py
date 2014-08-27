@@ -35,24 +35,42 @@ class ModelResourceMixin(odin.Resource):
         mapping = registration.get_mapping(cls.model, cls)
         return mapping(model, context).convert(**field_values)
 
-    def save(self, context=None, save=True):
+    def save(self, context=None, commit=True):
         """
         Save this resource instance to the database.
+
+        :param context: Context dict passed to each mapping function.
+        :param commit: If commit=True, then the newly created model instance will be saved to the database.
+        :return: Newly created model instance.
+
         """
         model = self.convert_to(self.model, context)
-        if save:
+        if commit:
             model.save()
         return model
 
-    def update(self, model, context=None, save=True):
+    def update(self, instance, context=None, commit=True, lazy=True):
         """
         Update an existing model from this model.
+
+        :param instance: Model instance to be updated.
+        :param context: Context dict passed to each mapping function.
+        :param commit: If True, then changes to the updated model instance will be saved to the database.
+        :param lazy: If True, then instance and source resource are compared, if no changes are found no database,
+            operation is performed.
+        :return: Updated model instance.
+
         """
+        assert isinstance(instance, self.model)
+
         mapping = registration.get_mapping(self.__class__, self.model)
-        mapping(self, context).update(model)
-        if save:
-            model.save()
-        return model
+        mapper = mapping(self, context)
+
+        if not lazy or len(mapper.diff(instance)) > 0:
+            mapper.update(instance)
+            if commit:
+                instance.save()
+        return instance
 
 
 MODEL_FIELD_MAP = [
