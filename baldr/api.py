@@ -50,7 +50,10 @@ class ResourceApiBase(object):
 
             self.url("(\d+)", ...)
         """
-        return url(r'^%s/%s/?$' % (self.url_prefix + self.api_name.lower(), regex), view, kwargs, name, prefix)
+        if regex:
+            return url(r'^%s/%s/?$' % (self.url_prefix + self.api_name.lower(), regex), view, kwargs, name, prefix)
+        else:
+            return url(r'^%s/?$' % (self.url_prefix + self.api_name.lower()), view, kwargs, name, prefix)
 
     @property
     def urls(self):
@@ -271,10 +274,8 @@ class ListMixin(ResourceApi):
     def get_list(self, request):
         offset = int(request.GET.get('offset', 0))
         limit = int(request.GET.get('limit', 50))
-        return Listing(
-            self.list_resources(request, offset, limit),
-            limit, offset
-        )
+        result = self.list_resources(request, offset, limit)
+        return Listing([r for r in result], limit, offset)
 
     def list_resources(self, request, offset, limit):
         """
