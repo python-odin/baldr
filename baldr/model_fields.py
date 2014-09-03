@@ -7,8 +7,26 @@ import six
 from baldr import form_fields
 
 
+class NewResourceField(six.with_metaclass(models.SubfieldBase, models.TextField)):
+    """
+    Improved resource field to handle serializes/de-serializes of an Odin resource.
+
+    This improved field is lazy in that it will not attempt to de-serialise until needed.
+
+    This new field is also compatible with Django 1.7 migrations.
+    """
+    def __init__(self, resource_type, codec=json_codec, *args, **kwargs):
+        super(NewResourceField, self).__init__(*args, **kwargs)
+        self.resource_type = resource_type
+        self.codec = codec
+
+
+
+
 class ResourceField(six.with_metaclass(models.SubfieldBase, models.TextField)):
-    """Field that serializes/de-serializes an Odin resource to the database seamlessly."""
+    """
+    Field that serializes/de-serializes an Odin resource to the database seamlessly.
+    """
     form_class = form_fields.ResourceField
 
     def __init__(self, resource_type, codec=json_codec, *args, **kwargs):
@@ -67,7 +85,9 @@ class ResourceField(six.with_metaclass(models.SubfieldBase, models.TextField)):
 
 
 class ResourceListField(ResourceField):
-    """Field that serializes/de-serializes a list of Odin resource to the database seamlessly."""
+    """
+    Field that serializes/de-serializes a list of Odin resource to the database seamlessly.
+    """
     form_class = form_fields.ResourceListField
 
     def to_python(self, value):
