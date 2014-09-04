@@ -11,5 +11,5 @@ def _ensure_registration():
 
     This provides support for Django Models and use of Django Validators in Odin resources.
     """
-    from . import models
+    from . import models  # NoQA
 _ensure_registration()
