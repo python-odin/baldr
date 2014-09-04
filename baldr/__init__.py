@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 
 __version__ = "0.5.1"
-default_app_config = 'baldr.BaldrAppConfig'
+default_app_config = 'baldr.app.BaldrAppConfig'
 
 
 def _ensure_registration():
