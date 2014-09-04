@@ -49,7 +49,7 @@ class ResourceField(CharField):
             except odin_exceptions.ValidationError as ve:
                 raise django_exceptions.ValidationError(str(ve.message_dict))
             except ValueError as ve:
-                raise django_exceptions.ValidationError(ve.message)
+                raise django_exceptions.ValidationError(str(ve))
 
         raise django_exceptions.ValidationError(
             self.error_messages['invalid'] % self.resource_type._meta.resource_name, code='invalid'
@@ -88,7 +88,7 @@ class ResourceListField(ResourceField):
             except odin_exceptions.ValidationError as ve:
                 raise django_exceptions.ValidationError(str(ve.message_dict))
             except ValueError as ve:
-                raise django_exceptions.ValidationError(ve.message)
+                raise django_exceptions.ValidationError(str(ve))
 
         raise django_exceptions.ValidationError(
             self.error_messages['invalid'] % self.resource_type._meta.resource_name, code='invalid')
