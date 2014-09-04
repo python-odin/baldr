@@ -47,7 +47,10 @@ class ResourceField(CharField):
             try:
                 return self.codec.loads(value, self.resource_type, full_clean=False)
             except odin_exceptions.ValidationError as ve:
-                raise django_exceptions.ValidationError(str(ve.message_dict))
+                if hasattr(ve, 'message_dict'):
+                    raise django_exceptions.ValidationError(str(ve.message_dict))
+                else:
+                    raise django_exceptions.ValidationError(ve.messages)
             except ValueError as ve:
                 raise django_exceptions.ValidationError(str(ve))
 
@@ -65,7 +68,7 @@ class ResourceField(CharField):
             try:
                 value.full_clean()
             except odin_exceptions.ValidationError as ve:
-                raise django_exceptions.ValidationError(ve.message_dict)
+                raise django_exceptions.ValidationError(str(ve.message_dict))
         else:
             raise django_exceptions.ValidationError(
                 self.error_messages['invalid'] % self.resource_type._meta.resource_name, code='invalid')
