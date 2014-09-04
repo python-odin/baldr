@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.core import exceptions as django_exceptions
 from django.forms import widgets
-from django.forms.fields import Field
+from django.forms.fields import CharField
 from django.utils.translation import ugettext_lazy as _
 import odin
 from odin import exceptions as odin_exceptions
@@ -9,7 +9,7 @@ from odin.codecs import json_codec
 import six
 
 
-class ResourceField(Field):
+class ResourceField(CharField):
     """
     Form field that wraps an Odin resource.
     """
@@ -20,19 +20,19 @@ class ResourceField(Field):
         'invalid': _('This field is not a valid %s resource.'),
     }
 
-    def __init__(self, resource_type, codec=json_codec, indent=0, *args, **kwargs):
+    def __init__(self, resource_type, codec=json_codec, codec_kargs=None, *args, **kwargs):
         assert issubclass(resource_type, odin.Resource)
         super(ResourceField, self).__init__(*args, **kwargs)
 
         self.resource_type = resource_type
         self.codec = codec
-        self.indent = indent
+        self.codec_kwargs = dict(indent=2, sort_keys=True) if codec_kargs is None else codec_kargs
 
     def prepare_value(self, value):
         if value is None:
             return ''
         elif isinstance(value, (list, tuple, odin.Resource)):
-            return self.codec.dumps(value, indent=self.indent)
+            return self.codec.dumps(value, **self.codec_kwargs)
         else:
             return str(value)
 
@@ -52,7 +52,8 @@ class ResourceField(Field):
                 raise django_exceptions.ValidationError(ve.message)
 
         raise django_exceptions.ValidationError(
-            self.error_messages['invalid'] % self.resource_type._meta.resource_name, code='invalid')
+            self.error_messages['invalid'] % self.resource_type._meta.resource_name, code='invalid'
+        )
 
     def validate(self, value):
         super(ResourceField, self).validate(value)
@@ -65,9 +66,9 @@ class ResourceField(Field):
                 value.full_clean()
             except odin_exceptions.ValidationError as ve:
                 raise django_exceptions.ValidationError(ve.message_dict)
-
-        raise django_exceptions.ValidationError(
-            self.error_messages['invalid'] % self.resource_type._meta.resource_name, code='invalid')
+        else:
+            raise django_exceptions.ValidationError(
+                self.error_messages['invalid'] % self.resource_type._meta.resource_name, code='invalid')
 
 
 class ResourceListField(ResourceField):
@@ -109,4 +110,5 @@ class ResourceListField(ResourceField):
         # Unknown type
         else:
             raise django_exceptions.ValidationError(
-                self.error_messages['invalid'] % self.resource_type._meta.resource_name, code='invalid')
+                self.error_messages['invalid'] % self.resource_type._meta.resource_name, code='invalid'
+            )
