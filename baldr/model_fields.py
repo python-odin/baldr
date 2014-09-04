@@ -7,6 +7,34 @@ import six
 from baldr import form_fields
 
 
+class ResourceFieldDescriptor(object):
+    """
+    Descriptor for use with a resource field.
+    """
+    def __init__(self, field):
+        self.field = field
+
+    def __get__(self, instance, owner):
+        if instance is None:
+            raise AttributeError(
+                "The '%s' attribute can only be accessed from %s instances."
+                % (self.field.name, owner.__name__))
+
+        resource = instance.__dict__[self.field.attr_name]
+
+        if resource is None:
+            return None
+
+        if isinstance(resource, six.string_types):
+            resource = self.field.codec.loads(resource, self.field.resource_type, full_clean=False)
+            instance.__dict__[self.field.attr_name] = resource
+
+        return resource
+
+    def __set__(self, instance, value):
+        instance.__dict__[self.field.attr_name] = value
+
+
 class NewResourceField(six.with_metaclass(models.SubfieldBase, models.TextField)):
     """
     Improved resource field to handle serializes/de-serializes of an Odin resource.
@@ -15,12 +43,60 @@ class NewResourceField(six.with_metaclass(models.SubfieldBase, models.TextField)
 
     This new field is also compatible with Django 1.7 migrations.
     """
-    def __init__(self, resource_type, codec=json_codec, *args, **kwargs):
-        super(NewResourceField, self).__init__(*args, **kwargs)
+    def __init__(self, resource_type, verbose_name=None, name=None, *args, **kwargs):
+        super(NewResourceField, self).__init__(verbose_name, name, *args, **kwargs)
         self.resource_type = resource_type
-        self.codec = codec
+        # This is fixed for now, this is a limitation of the current odin codecs, a refactor is needed to provide
+        # codec classes.
+        self.codec = json_codec
 
+    def to_python(self, value):
+        if value in [None, '', {}, '{}']:  # Treat an empty JSON object as null.
+            return
 
+        if isinstance(value, self.resource_type):
+            return value
+
+        raise django_exceptions.ValidationError(
+            'Value provide is not a valid %s resource' % self.resource_type._meta.resource_name)
+
+    def validate(self, value, model_instance):
+        if not self.editable:
+            # Skip validation for non-editable fields.
+            return
+
+        if value is None and not self.null:
+            raise django_exceptions.ValidationError(self.error_messages['null'], code='null')
+
+        if not self.blank and value in self.empty_values:
+            raise django_exceptions.ValidationError(self.error_messages['blank'], code='blank')
+
+        if isinstance(value, self.resource_type):
+            try:
+                value.full_clean()
+            except odin_exceptions.ValidationError as ve:
+                raise django_exceptions.ValidationError(ve.message_dict)
+
+        raise django_exceptions.ValidationError(
+            'Value provide is not a valid %s resource' % self.resource_type._meta.resource_name)
+
+    def get_db_prep_save(self, value, connection):
+        # Convert our JSON object to a string before we save
+        if value is None:
+            value = None if self.null else ""
+        else:
+            value = json_codec.dumps(value)
+        return super(NewResourceField, self).get_db_prep_save(value, connection=connection)
+
+    def contribute_to_class(self, cls, name):
+        super(NewResourceField, self).contribute_to_class(cls, name)
+        setattr(cls, self.name, ResourceFieldDescriptor(self))
+
+    def deconstruct(self):
+        name, path, args, kwargs = super(NewResourceField, self).deconstruct()
+        kwargs['resource_type'] = self.resource_type
+        # kwargs['codec'] = self.codec
+        return name, path, args, kwargs
 
 
 class ResourceField(six.with_metaclass(models.SubfieldBase, models.TextField)):
