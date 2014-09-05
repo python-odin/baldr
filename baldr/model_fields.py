@@ -26,7 +26,10 @@ class ResourceFieldDescriptor(object):
             return None
 
         if isinstance(resource, six.string_types):
-            resource = self.field.codec.loads(resource, self.field.resource_type, full_clean=False)
+            try:
+                resource = self.field.codec.loads(resource, self.field.resource_type, full_clean=False)
+            except odin_exceptions.ValidationError:
+                pass
             instance.__dict__[self.field.name] = resource
 
         return resource
@@ -52,6 +55,7 @@ class ResourceField(models.TextField):
         # This is fixed for now, this is a limitation of the current odin codecs, a refactor is needed to provide
         # codec classes.
         self.codec = json_codec
+        self.codec_kwargs = dict(sort_keys=True)
 
     def to_python(self, value):
         if value in [None, '', {}, '{}']:  # Treat an empty JSON object as null.
@@ -92,7 +96,7 @@ class ResourceField(models.TextField):
         if value is None:
             value = None if self.null else ""
         else:
-            value = self.codec.dumps(value)
+            value = self.codec.dumps(value, **self.codec_kwargs)
         return super(ResourceField, self).get_db_prep_save(value, connection=connection)
 
     def contribute_to_class(self, cls, name):
