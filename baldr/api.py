@@ -173,7 +173,7 @@ class ResourceApiBase(object):
 
         method = getattr(self, "%s_%s" % (request_method, request_type), None)
         if method is None:
-            raise NotImplementedError()
+            raise Http404()
 
         # Allow for a pre_dispatch hook, a response from pre_dispatch would indicate an override of kwargs
         if hasattr(self, 'pre_dispatch'):
