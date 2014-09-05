@@ -1,6 +1,7 @@
 # coding=utf-8
 from django.conf import settings
 from django.conf.urls import url, include
+from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 from odin.codecs import json_codec
@@ -129,6 +130,9 @@ class ResourceApiBase(object):
                     resource = Error(status, 40000, "Fields failed validation.", meta=e.message_dict)
                 else:
                     resource = Error(status, 40000, str(e))
+            except PermissionDenied as e:
+                status = 403
+                resource = Error(status, 40300, "Permission denied", str(e))
             except NotImplementedError:
                 # A mixin method has not been implemented, as defining a mixing is explicit this is considered a server
                 # error that should be addressed.

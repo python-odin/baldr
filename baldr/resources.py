@@ -27,7 +27,7 @@ class Error(odin.Resource):
         namespace = None
 
     status = odin.IntegerField(help_text="HTTP status code of the response.")
-    code = odin.IntegerField(help_text="An extended error code for more fine grained error results.")
+    sub_status = odin.IntegerField(help_text="Sub-status code for more fine grained error results.")
     message = odin.StringField(help_text="A message that can be used for an end user.")
     developer_message = odin.StringField(null=True, help_text="More complex error message suitable for a developer.")
     meta = odin.StringField(null=True, help_text="Additional meta information that can help to solve issues.")
