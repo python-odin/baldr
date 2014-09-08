@@ -16,8 +16,8 @@ class ImmediateErrorHttpResponse(ImmediateHttpResponse):
     """
     An error response that should be returned Immediately!
     """
-    def __init__(self, status, code, message, developer_message=None, meta=None, headers=None):
+    def __init__(self, status, sub_status, message, developer_message=None, meta=None, headers=None):
         super(ImmediateErrorHttpResponse, self).__init__(
-            Error(status, code, message, developer_message, meta),
+            Error(status, sub_status, message, developer_message, meta),
             status, headers
         )

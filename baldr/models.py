@@ -11,7 +11,8 @@ class ModelFieldResolver(FieldResolverBase):
     Field resolver for Django Models
     """
     def get_field_dict(self):
-        return {f.attname: f for f in self.obj._meta.fields}
+        meta = self.obj._meta
+        return {f.attname: f for f in meta.fields}
 
 registration.register_field_resolver(ModelFieldResolver, models.Model)
 
