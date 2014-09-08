@@ -249,7 +249,7 @@ class ResourceApi(ResourceApiBase):
     def dispatch_detail(self, request, **kwargs):
         return self.dispatch(request, 'detail', **kwargs)
 
-    def resource_from_body(self, request):
+    def resource_from_body(self, request, allow_multiple=False):
         """
         Get a resource instance from ``request.body``.
         """
@@ -259,9 +259,15 @@ class ResourceApi(ResourceApiBase):
             raise ImmediateErrorHttpResponse(400, 40099, "Unable to decode request body.", str(ude))
 
         try:
-            return request.codec.loads(body, resource=self.resource)
+            resource = request.codec.loads(body, resource=self.resource)
         except ValueError as ve:
             raise ImmediateErrorHttpResponse(400, 40098, "Unable to load resource.", str(ve))
+
+        # Check an array of data hasn't been supplied
+        if not allow_multiple and isinstance(resource, list):
+            raise ImmediateErrorHttpResponse(400, 40097, "Expected a single resource not a list.")
+
+        return resource
 
 
 class ActionMixin(ResourceApi):
