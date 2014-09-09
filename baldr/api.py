@@ -210,6 +210,16 @@ class ResourceApiBase(object):
         """
         pass
 
+    def decode_body(self, request):
+        """
+        Helper method that ensures that decodes any body content into a string object (this is needed by the json
+        module for example).
+        """
+        body = request.body
+        if isinstance(body, bytes):
+            return body.decode('UTF8')
+        return body
+
 
 class ResourceApi(ResourceApiBase):
     """
@@ -239,6 +249,26 @@ class ResourceApi(ResourceApiBase):
     def dispatch_detail(self, request, **kwargs):
         return self.dispatch(request, 'detail', **kwargs)
 
+    def resource_from_body(self, request, allow_multiple=False):
+        """
+        Get a resource instance from ``request.body``.
+        """
+        try:
+            body = self.decode_body(request)
+        except UnicodeDecodeError as ude:
+            raise ImmediateErrorHttpResponse(400, 40099, "Unable to decode request body.", str(ude))
+
+        try:
+            resource = request.codec.loads(body, resource=self.resource)
+        except ValueError as ve:
+            raise ImmediateErrorHttpResponse(400, 40098, "Unable to load resource.", str(ve))
+
+        # Check an array of data hasn't been supplied
+        if not allow_multiple and isinstance(resource, list):
+            raise ImmediateErrorHttpResponse(400, 40097, "Expected a single resource not a list.")
+
+        return resource
+
 
 class ActionMixin(ResourceApi):
     """
@@ -251,7 +281,7 @@ class ActionMixin(ResourceApi):
 
     """
     def base_urls(self):
-        return super(ResourceApi, self).base_urls() + [
+        return super(ActionMixin, self).base_urls() + [
             # List Action URL
             self.url(
                 r'(?P<action>[-\w\d]+)',
@@ -302,13 +332,11 @@ class CreateMixin(ResourceApi):
         self.list_allowed_methods.append('post')
 
     def post_list(self, request):
-        resource = request.codec.loads(request.data, resource=self.resource)
-        result = self.create_resource(request, resource, False)
-        if result is None:
-            return
+        resource = self.resource_from_body(request)
+        return self.create_resource(request, resource, False)
 
     def put_list(self, request):
-        resource = request.codec.loads(request.data, resource=self.resource)
+        resource = self.resource_from_body(request)
         return self.create_resource(request, resource, True)
 
     def create_resource(self, request, resource, is_complete):
@@ -349,12 +377,12 @@ class UpdateMixin(ResourceApi):
         super(UpdateMixin, self).__init__(*args, **kwargs)
         self.detail_allowed_methods.append('post')
 
-    def post_list(self, request, resource_id):
-        resource = request.codec.loads(request.data, resource=self.resource)
+    def post_detail(self, request, resource_id):
+        resource = self.resource_from_body(request)
         return self.update_resource(request, resource_id, resource, False)
 
-    def put_list(self, request, resource_id):
-        resource = request.codec.loads(request.data, resource=self.resource)
+    def put_detail(self, request, resource_id):
+        resource = self.resource_from_body(request)
         return self.update_resource(request, resource_id, resource, True)
 
     def update_resource(self, request, resource_id, resource, is_complete):
