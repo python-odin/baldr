@@ -36,6 +36,27 @@ class ModelResourceMixin(odin.Resource):
         mapping = registration.get_mapping(cls.model, cls)
         return mapping(model, context).convert(**field_values)
 
+    @classmethod
+    def from_queryset(cls, queryset, single=False):
+        """
+        Use a query set and optimise fetching of data. This assumes that your resource has the sames fields as the
+        model. This helper uses ``values_list`` and ``only`` methods to limit data processing and create resources
+        faster.
+
+        The method is a lot faster than from a model as it does not construct a full model.
+
+        :param queryset:
+        :param single:
+        :return:
+
+        """
+        fields = cls._meta.field_map.keys()
+        data = queryset.values(*fields)
+        if single:
+            return cls.create_from_dict(data[0])
+        else:
+            return [cls.create_from_dict(d) for d in data]
+
     def save(self, context=None, commit=True):
         """
         Save this resource instance to the database.
@@ -84,6 +105,7 @@ MODEL_FIELD_MAP = [
     (models.FloatField, odin.FloatField, {}),
     (models.BooleanField, odin.BooleanField, {}),
     (models.CharField, odin.StringField, {}),
+    (models.TextField, odin.StringField, {}),
 ]
 
 
