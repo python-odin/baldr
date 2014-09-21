@@ -6,6 +6,9 @@ from odin.codecs import json_codec
 import six
 from baldr import form_fields
 
+# Treat an empty JSON object as None.
+EMPTY_VALUES = (None, '', {}, '{}')
+
 
 class ResourceFieldDescriptor(object):
     """
@@ -22,16 +25,16 @@ class ResourceFieldDescriptor(object):
 
         resource = instance.__dict__[self.field.name]
 
-        # Treat an empty string as None.
-        if resource in (None, ''):
-            return None
+        if resource in EMPTY_VALUES:
+            return
 
         if isinstance(resource, six.string_types):
             try:
                 resource = self.field.codec.loads(resource, self.field.resource_type, full_clean=False)
             except odin_exceptions.ValidationError:
                 pass
-            instance.__dict__[self.field.name] = resource
+            else:
+                instance.__dict__[self.field.name] = resource
 
         return resource
 
@@ -59,7 +62,7 @@ class ResourceField(models.TextField):
         self.codec_kwargs = dict(sort_keys=True)
 
     def to_python(self, value):
-        if value in [None, '', {}, '{}']:  # Treat an empty JSON object as null.
+        if value in EMPTY_VALUES:
             return
 
         if isinstance(value, self.resource_type):
