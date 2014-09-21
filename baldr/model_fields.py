@@ -31,7 +31,7 @@ class ResourceFieldDescriptor(object):
         if isinstance(resource, six.string_types):
             try:
                 resource = self.field.codec.loads(resource, self.field.resource_type, full_clean=False)
-            except odin_exceptions.ValidationError:
+            except (odin_exceptions.ValidationError, odin_exceptions.CodecDecodeError):
                 pass
             else:
                 instance.__dict__[self.field.name] = resource
