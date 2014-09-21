@@ -22,7 +22,8 @@ class ResourceFieldDescriptor(object):
 
         resource = instance.__dict__[self.field.name]
 
-        if resource is None:
+        # Treat an empty string as None.
+        if resource in (None, ''):
             return None
 
         if isinstance(resource, six.string_types):
