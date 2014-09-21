@@ -5,13 +5,9 @@ python:
 
 env:
   - DJANGO_PACKAGE="django>=1.6,<1.7"
-  - DJANGO_PACKAGE="https://www.djangoproject.com/download/1.7c2/tarball/"
+  - DJANGO_PACKAGE="django>=1.7,<1.8"
 
 matrix:
-  # Release candiate status
-  allow_failures:
-  - env: DJANGO_PACKAGE="https://www.djangoproject.com/download/1.7c2/tarball/"
-
   # Include specific versions Django for Python 3
   include:
   - python: "3.3"
@@ -19,10 +15,10 @@ matrix:
   - python: "3.4"
     env: DJANGO_PACKAGE="django>=1.6,<1.7"
   - python: "3.4"
-    env: DJANGO_PACKAGE="https://www.djangoproject.com/download/1.7c2/tarball/"
+    env: DJANGO_PACKAGE="django>=1.7,<1.8"
 
 install:
-  - pip install -q $DJANGO_PACKAGE six -egit+https://github.com/timsavage/odin.git#egg=Odin
+  - pip install -q $DJANGO_PACKAGE six https://github.com/timsavage/odin/archive/master.zip
   - pip install coveralls
 
 script: coverage run django_test_runner/__main__.py baldr
