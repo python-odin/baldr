@@ -104,7 +104,7 @@ MODEL_FIELD_MAP = [
     (models.IntegerField, odin.IntegerField, {}),
     (models.FloatField, odin.FloatField, {}),
     (models.BooleanField, odin.BooleanField, {}),
-    (models.CharField, odin.StringField, {}),
+    (models.CharField, odin.StringField, dict(max_length='max_length')),
     (models.TextField, odin.StringField, {}),
 ]
 
