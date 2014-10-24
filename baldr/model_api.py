@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from odin import registration
 from baldr import api
 
 
@@ -17,6 +18,17 @@ class ModelResourceApi(api.ResourceApi):
     to_model_mapping = None
     # Mapping to use for mapping to resource
     to_resource_mapping = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        assert self.model, "A model has not been provided."
+
+        # Attempt to resolve mappings
+        if self.to_model_mapping is None:
+            self.to_model_mapping = registration.get_mapping(self.resource, self.model)
+        if self.to_resource_mapping is None:
+            self.to_resource_mapping = registration.get_mapping(self.model, self.resource)
 
     def get_queryset(self, request):
         return self.model.objects.all()
