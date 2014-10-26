@@ -167,7 +167,9 @@ def model_resource_factory(model, base_resource=odin.Resource, resource_mixins=N
     resource_type = type(model_opts.object_name, bases, attrs)
 
     # Generate mappings
-    forward_mapping, reverse_mapping = mapping_factory(model, resource_type) if generate_mappings else None, None
+    forward_mapping, reverse_mapping = None, None
+    if generate_mappings:
+        forward_mapping, reverse_mapping = mapping_factory(model, resource_type)
 
     if return_mappings:
         return resource_type, forward_mapping, reverse_mapping
