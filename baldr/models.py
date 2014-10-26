@@ -101,11 +101,11 @@ MODEL_FIELD_MAP = [
     (models.DateField, odin.DateField, {}),
     (models.TimeField, odin.TimeField, {}),
     (models.URLField, odin.UrlField, {}),
-    (models.IntegerField, odin.IntegerField, {}),
+    (models.IntegerField, odin.IntegerField, dict(min_value='min_value', max_value='max_value')),
     (models.FloatField, odin.FloatField, {}),
     (models.BooleanField, odin.BooleanField, {}),
-    (models.CharField, odin.StringField, {}),
-    (models.TextField, odin.StringField, {}),
+    (models.CharField, odin.StringField, dict(max_length='max_length')),
+    (models.TextField, odin.StringField, {})
 ]
 
 
@@ -117,11 +117,12 @@ def field_factory(model_field):
     """
     for mf, of, m in MODEL_FIELD_MAP:
         if isinstance(model_field, mf):
+            # TODO: Handle attributes.
             return of()
 
 
-def model_resource_factory(model, base_resource=odin.Resource, resource_mixins=None, module=None,
-                           exclude_fields=None, include_fields=None, generate_mappings=True, return_mappings=False):
+def model_resource_factory(model, base_resource=odin.Resource, resource_mixins=None, module=None, exclude_fields=None,
+                           include_fields=None, generate_mappings=True, return_mappings=False, additional_fields=None):
     """
     Factory method for generating a resource from a existing Django model.
 
@@ -142,9 +143,12 @@ def model_resource_factory(model, base_resource=odin.Resource, resource_mixins=N
     :param generate_mappings: Generate mappings between resource and model (in both directions).
     :param return_mappings: Return the mappings along with the model resource (returns a
         tuple(Resource, ForwardMapping, ReverseMapping).
+    :param additional_fields: Any additional fields that should be appended to the resource, these can override fields
+        from the model.
 
     """
-    bases = tuple(resource_mixins or [] + [ModelResourceMixin, base_resource])
+    resource_mixins = resource_mixins or []
+    bases = tuple(resource_mixins + [ModelResourceMixin, base_resource])
     attrs = {}
     model_opts = model._meta
 
@@ -158,6 +162,12 @@ def model_resource_factory(model, base_resource=odin.Resource, resource_mixins=N
         field = field_factory(mf)
         if field:
             attrs[mf.attname] = field
+
+    # Add any additional fields.
+    if additional_fields:
+        assert isinstance(additional_fields, dict)
+        for attname, field in additional_fields.items():
+            attrs[attname] = field
 
     # Setup other require attributes and create type
     if isinstance(module, str):
