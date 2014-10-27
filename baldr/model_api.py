@@ -40,12 +40,22 @@ class ModelResourceApi(api.ResourceApi):
 
 
 class ListModelMixin(api.ListMixin, ModelResourceApi):
+    """
+    Mixin for ``ModelResourceApi`` that fetches a list of resources from a database.
+    """
+    # Override of mapping for lists
+    to_resource_list_mapping = None
+
     def list_resources(self, request, offset, limit):
         models = self.get_queryset(request)[offset:offset+limit]
-        return self.to_resource_mapping.apply(models)
+        resource_mapping = self.to_resource_list_mapping or self.to_resource_mapping
+        return resource_mapping.apply(models)
 
 
 class CreateModelMixin(api.CreateMixin, ModelResourceApi):
+    """
+    Mixin for ``ModelResourceApi`` that handles resource creation to a database.
+    """
     def create_resource(self, request, resource, is_complete):
         new_model = self.to_model_mapping.apply(resource)
         new_model.pk = None
@@ -54,19 +64,25 @@ class CreateModelMixin(api.CreateMixin, ModelResourceApi):
 
 
 class RetrieveModelMixin(api.RetrieveMixin, ModelResourceApi):
+    """
+    Mixin for ``ModelResourceApi`` that handles resource retrieval from a database.
+    """
     def retrieve_resource(self, request, resource_id):
         model = self.get_model(request, resource_id)
         return self.to_resource_mapping.apply(model)
 
 
 class UpdateModelMixin(api.UpdateMixin, ModelResourceApi):
+    """
+    Mixin for ``ModelResourceApi`` that handles resource update to a database.
+    """
     def update_resource(self, request, resource_id, resource, is_complete):
         if is_complete:
             model = self.to_model_mapping.apply(resource)
         else:
             model = self.get_model(request, resource_id)
             self.to_model_mapping(resource).update(model)
-        model.pk = resource_id
+        setattr(model, self.model_id_field, resource_id)
         model.save()
 
 
