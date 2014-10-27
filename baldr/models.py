@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
+from django.core.exceptions import ValidationError
 from django.db import models
 import sys
 from odin import registration
 import odin
 from odin.mapping import FieldResolverBase, mapping_factory
+from baldr.model_fields import ResourceField, ResourceListField
 
+
+# Register support for Django Models and Validators
 
 class ModelFieldResolver(FieldResolverBase):
     """
@@ -16,6 +20,21 @@ class ModelFieldResolver(FieldResolverBase):
 
 registration.register_field_resolver(ModelFieldResolver, models.Model)
 
+
+# Register a the Django ValidationError exception with Odin.
+def django_validation_error_handler(exception, field, errors):
+    if hasattr(exception, 'code') and exception.code in field.error_messages:
+        message = field.error_messages[exception.code]
+        if exception.params:
+            message = message % exception.params
+        errors.append(message)
+    else:
+        errors.extend(exception.messages)
+
+registration.register_validation_error_handler(ValidationError, django_validation_error_handler)
+
+
+# Model factories and helper methods.
 
 class ModelResourceMixin(odin.Resource):
     """
@@ -96,16 +115,19 @@ class ModelResourceMixin(odin.Resource):
 
 
 MODEL_FIELD_MAP = [
-    # (Model Field, Odin Field, attribute mappings)
-    (models.DateTimeField, odin.DateTimeField, {}),
-    (models.DateField, odin.DateField, {}),
-    (models.TimeField, odin.TimeField, {}),
-    (models.URLField, odin.UrlField, {}),
-    (models.IntegerField, odin.IntegerField, dict(min_value='min_value', max_value='max_value')),
-    (models.FloatField, odin.FloatField, {}),
-    (models.BooleanField, odin.BooleanField, {}),
-    (models.CharField, odin.StringField, dict(max_length='max_length')),
-    (models.TextField, odin.StringField, {})
+    # (Model Field, Odin Field, attribute mappings {odin_attr: model_attr})
+    (ResourceField, odin.DictAs, dict(resource='resource_type', null='null')),
+    (ResourceListField, odin.ListOf, dict(resource='resource_type', null='null')),
+
+    (models.DateTimeField, odin.DateTimeField, dict(null='null', choices='choices')),
+    (models.DateField, odin.DateField, dict(null='null', choices='choices')),
+    (models.TimeField, odin.TimeField, dict(null='null', choices='choices')),
+    (models.URLField, odin.UrlField, dict(null='null', choices='choices')),
+    (models.IntegerField, odin.IntegerField, dict(null='null', choices='choices')),
+    (models.FloatField, odin.FloatField, dict(null='null', choices='choices')),
+    (models.BooleanField, odin.BooleanField, dict(null='null', choices='choices')),
+    (models.CharField, odin.StringField, dict(max_length='max_length', null='null', choices='choices')),
+    (models.TextField, odin.StringField, dict(null='null', choices='choices')),
 ]
 
 
@@ -115,14 +137,16 @@ def field_factory(model_field):
     :param model_field:
     :return:
     """
-    for mf, of, m in MODEL_FIELD_MAP:
+    for mf, of, attrs in MODEL_FIELD_MAP:
         if isinstance(model_field, mf):
-            # TODO: Handle attributes.
-            return of()
+            attrs = {oa: getattr(model_field, ma) for oa, ma in attrs.items()}
+            attrs['validators'] = getattr(model_field, 'validators')
+            return of(**attrs)
 
 
 def model_resource_factory(model, base_resource=odin.Resource, resource_mixins=None, module=None, exclude_fields=None,
-                           include_fields=None, generate_mappings=True, return_mappings=False, additional_fields=None):
+                           include_fields=None, generate_mappings=True, return_mappings=False, additional_fields=None,
+                           resource_type_name=None):
     """
     Factory method for generating a resource from a existing Django model.
 
@@ -145,12 +169,14 @@ def model_resource_factory(model, base_resource=odin.Resource, resource_mixins=N
         tuple(Resource, ForwardMapping, ReverseMapping).
     :param additional_fields: Any additional fields that should be appended to the resource, these can override fields
         from the model.
+    :param resource_type_name: Name of the resource created by the factory (default is the name of the model)
 
     """
     resource_mixins = resource_mixins or []
     bases = tuple(resource_mixins + [ModelResourceMixin, base_resource])
     attrs = {}
     model_opts = model._meta
+    resource_type_name = resource_type_name or model_opts.object_name
 
     # Append fields
     exclude_fields = exclude_fields or []
@@ -174,7 +200,7 @@ def model_resource_factory(model, base_resource=odin.Resource, resource_mixins=N
         module = sys.modules[module]
     attrs['__module__'] = module or model.__module__
     attrs['model'] = model
-    resource_type = type(model_opts.object_name, bases, attrs)
+    resource_type = type(resource_type_name, bases, attrs)
 
     # Generate mappings
     forward_mapping, reverse_mapping = None, None
