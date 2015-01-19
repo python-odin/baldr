@@ -3,6 +3,7 @@ from django.conf import settings
 from django.conf.urls import url, include
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, Http404
+from django.utils.functional import cached_property
 from django.views.decorators.csrf import csrf_exempt
 from odin.codecs import json_codec
 from odin.exceptions import ValidationError
@@ -430,17 +431,67 @@ class ApiCollection(object):
         self.api_name = kwargs.pop('api_name', 'api')
         self.resource_apis = resource_apis
 
-    @property
+    @cached_property
     def urls(self):
-        if not hasattr(self, '_urls'):
-            urls = []
-            for resource_api in self.resource_apis:
-                urls.extend(resource_api.urls)
-            self._urls = urls
-        return self._urls
+        urls = []
+        for resource_api in self.resource_apis:
+            urls.extend(resource_api.urls)
+        return urls
 
     def include(self, namespace=None):
         return include(self.urls, namespace)
 
     def patterns(self):
         return [url(r'^%s/' % self.api_name, self.include())]
+
+
+class ApiVersion(object):
+    """
+    A versioned collection of several resource API's.
+
+    Along with helper methods for building URL patterns.
+    """
+    def __init__(self, *resource_apis, **kwargs):
+        self.resource_apis = resource_apis
+        self.version = kwargs.get('version', 'v1')
+
+    @cached_property
+    def urls(self):
+        urls = []
+        for resource_api in self.resource_apis:
+            urls.extend(resource_api.urls)
+        return urls
+
+    def include(self, namespace=None):
+        return include(self.urls, namespace)
+
+
+class Api(object):
+    """
+    An API (made up of versions).
+
+    ::
+        urlpatterns += Api(
+            ApiVersion(
+                UserApi(),
+                MyApi(),
+                version='v1',
+            )
+        ).patterns()
+
+    """
+    def __init__(self, *versions, **kwargs):
+        self.versions = versions
+        self.api_name = kwargs.get('api_name', 'api')
+
+    def patterns(self):
+        urls = [url(r'^%s/%s/' % (self.api_name, v.version), v.include()) for v in self.versions]
+        urls.append(url(r'^%s/' % self.api_name, self._unknown_version))
+        return urls
+
+    def _unknown_version(self, _):
+        supported_versions = [v.version for v in self.versions]
+        return HttpResponse(
+            "Unsupported API version. Available versions: %s" % ', '.join(supported_versions),
+            status=418  # I'm a teapot... Is technically a bad request but makes sense to have a different status code.
+        )
