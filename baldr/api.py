@@ -445,25 +445,15 @@ class ApiCollection(object):
         return [url(r'^%s/' % self.api_name, self.include())]
 
 
-class ApiVersion(object):
+class ApiVersion(ApiCollection):
     """
     A versioned collection of several resource API's.
 
     Along with helper methods for building URL patterns.
     """
     def __init__(self, *resource_apis, **kwargs):
-        self.resource_apis = resource_apis
-        self.version = kwargs.get('version', 'v1')
-
-    @cached_property
-    def urls(self):
-        urls = []
-        for resource_api in self.resource_apis:
-            urls.extend(resource_api.urls)
-        return urls
-
-    def include(self, namespace=None):
-        return include(self.urls, namespace)
+        kwargs.setdefault('api_name', kwargs.pop('version', 'v1'))
+        super(ApiVersion, self).__init__(*resource_apis, **kwargs)
 
 
 class Api(object):
@@ -485,12 +475,12 @@ class Api(object):
         self.api_name = kwargs.get('api_name', 'api')
 
     def patterns(self):
-        urls = [url(r'^%s/%s/' % (self.api_name, v.version), v.include()) for v in self.versions]
+        urls = [url(r'^%s/%s/' % (self.api_name, v.api_name), v.include()) for v in self.versions]
         urls.append(url(r'^%s/' % self.api_name, self._unknown_version))
         return urls
 
     def _unknown_version(self, _):
-        supported_versions = [v.version for v in self.versions]
+        supported_versions = [v.api_name for v in self.versions]
         return HttpResponse(
             "Unsupported API version. Available versions: %s" % ', '.join(supported_versions),
             status=418  # I'm a teapot... Is technically a bad request but makes sense to have a different status code.
