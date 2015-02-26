@@ -140,6 +140,10 @@ class ResourceApiBase(object):
                 status = 501
                 resource = Error(status, 50100, "This method has not been implemented.")
             except Exception as e:
+                # Special case when a request raises a 500 error. If we are in debug mode and a default is used (ie
+                # request does not explicitly specify a content type) fall back to the Django default exception page.
+                if settings.DEBUG and getattr(content_type, 'is_default', False):
+                    raise
                 # Catch any other exceptions and pass them to the 500 handler for evaluation.
                 resource = self.handle_500(request, e)
                 status = resource.status
