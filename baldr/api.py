@@ -170,11 +170,11 @@ class ResourceApiBase(object):
 
         request.type = request_type
 
-        self.handle_authorisation(request)
-
         method = getattr(self, "%s_%s" % (request_method, request_type), None)
         if method is None:
             raise Http404()
+
+        self.handle_authorisation(request)
 
         # Allow for a pre_dispatch hook, a response from pre_dispatch would indicate an override of kwargs
         if hasattr(self, 'pre_dispatch'):
@@ -426,6 +426,15 @@ class ApiCollection(object):
     Collection of several resource API's.
 
     Along with helper methods for building URL patterns.
+
+    ::
+        urlpatterns += Api(
+            ApiCollection(
+                UserApi(),
+                MyApi(),
+            )
+        ).patterns()
+
     """
     def __init__(self, *resource_apis, **kwargs):
         self.api_name = kwargs.pop('api_name', 'api')
@@ -441,8 +450,9 @@ class ApiCollection(object):
     def include(self, namespace=None):
         return include(self.urls, namespace)
 
-    def patterns(self):
-        return [url(r'^%s/' % self.api_name, self.include())]
+    def patterns(self, api_name=None):
+        api_name = api_name or self.api_name
+        return [url(r'^%s/' % api_name, self.include())]
 
 
 class ApiVersion(ApiCollection):
