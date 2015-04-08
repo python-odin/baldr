@@ -226,6 +226,19 @@ class ResourceApiBase(object):
         return body
 
 
+class ResourceAction(object):
+    """
+    Provides an API for applying actions to a resource API. Actions could be
+    """
+    allowed_methods = ['get']
+
+    def __init__(self, name=None):
+        self.name = name
+
+    def base_urls(self):
+        return []
+
+
 class ResourceApi(ResourceApiBase):
     """
     Provides an API that returns a specified resource object.
@@ -286,7 +299,7 @@ class ActionMixin(ResourceApi):
 
     """
     def base_urls(self):
-        return super(ActionMixin, self).base_urls() + [
+        return [
             # List Action URL
             self.url(
                 r'(?P<action>[-\w\d]+)',
@@ -297,7 +310,7 @@ class ActionMixin(ResourceApi):
                 r'(?P<resource_id>%s)/(?P<action>[-\w\d]+)' % self.resource_id_regex,
                 self.wrap_view('dispatch_detail_action')
             ),
-        ]
+        ] + super(ActionMixin, self).base_urls()
 
     def dispatch_list_action(self, request, action, **kwargs):
         return self.dispatch(request, "%s_list" % action, **kwargs)
@@ -314,7 +327,7 @@ class ListMixin(ResourceApi):
         offset = int(request.GET.get('offset', 0))
         limit = int(request.GET.get('limit', 50))
         result = self.list_resources(request, offset, limit)
-        return Listing([r for r in result], limit, offset)
+        return Listing(list(result), limit, offset)
 
     def list_resources(self, request, offset, limit):
         """
