@@ -226,19 +226,6 @@ class ResourceApiBase(object):
         return body
 
 
-class ResourceAction(object):
-    """
-    Provides an API for applying actions to a resource API. Actions could be
-    """
-    allowed_methods = ['get']
-
-    def __init__(self, name=None):
-        self.name = name
-
-    def base_urls(self):
-        return []
-
-
 class ResourceApi(ResourceApiBase):
     """
     Provides an API that returns a specified resource object.
@@ -298,8 +285,14 @@ class ActionMixin(ResourceApi):
             pass
 
     """
+    actions = []
+
     def base_urls(self):
-        return [
+        urls = []
+        for action in self.actions:
+            urls += action.base_urls(self)
+
+        return urls + [
             # List Action URL
             self.url(
                 r'(?P<action>[-\w\d]+)',

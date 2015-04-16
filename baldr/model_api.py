@@ -38,6 +38,9 @@ class ModelResourceApi(api.ResourceApi):
             self.model_id_field: resource_id
         })
 
+    def save_model(self, request, model):
+        model.save()
+
 
 class ListModelMixin(api.ListMixin, ModelResourceApi):
     """
@@ -59,7 +62,7 @@ class CreateModelMixin(api.CreateMixin, ModelResourceApi):
     def create_resource(self, request, resource, is_complete):
         new_model = self.to_model_mapping.apply(resource)
         new_model.pk = None
-        new_model.save()
+        self.save_model(request, new_model)
         return self.to_resource_mapping.apply(new_model), 201
 
 
@@ -83,7 +86,7 @@ class UpdateModelMixin(api.UpdateMixin, ModelResourceApi):
             model = self.get_model(request, resource_id)
             self.to_model_mapping(resource).update(model)
         setattr(model, self.model_id_field, resource_id)
-        model.save()
+        self.save_model(request, model)
 
 
 class DeleteModelMixin(api.DeleteMixin, ModelResourceApi):
