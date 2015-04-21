@@ -6,7 +6,7 @@ from django.http import HttpResponse, Http404
 from django.utils.functional import cached_property
 from django.views.decorators.csrf import csrf_exempt
 from odin.codecs import json_codec
-from odin.exceptions import ValidationError
+from odin.exceptions import ValidationError, CodecDecodeError
 from baldr import content_type_resolvers
 from baldr.exceptions import ImmediateErrorHttpResponse, ImmediateHttpResponse
 from baldr.resources import Error, Listing
@@ -264,9 +264,11 @@ class ResourceApi(ResourceApiBase):
             raise ImmediateErrorHttpResponse(400, 40099, "Unable to decode request body.", str(ude))
 
         try:
-            resource = request.codec.loads(body, resource=self.resource)
+            resource = request.codec.loads(body, resource=self.resource, full_clean=False)
         except ValueError as ve:
             raise ImmediateErrorHttpResponse(400, 40098, "Unable to load resource.", str(ve))
+        except CodecDecodeError as cde:
+            raise ImmediateErrorHttpResponse(400, 40096, "Unable to decode body.", str(cde))
 
         # Check an array of data hasn't been supplied
         if not allow_multiple and isinstance(resource, list):
