@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
+import odin
+import sys
 from django.core.exceptions import ValidationError
 from django.db import models
-import sys
 from odin import registration
-import odin
 from odin.mapping import FieldResolverBase, mapping_factory
 from baldr.model_fields import ResourceField, ResourceListField
 
@@ -144,7 +144,7 @@ def field_factory(model_field):
             return of(**attrs)
 
 
-def model_resource_factory(model, base_resource=odin.Resource, resource_mixins=None, module=None, exclude_fields=None,
+def model_resource_factory(model, module, base_resource=odin.Resource, resource_mixins=None, exclude_fields=None,
                            include_fields=None, generate_mappings=True, return_mappings=False, additional_fields=None,
                            resource_type_name=None):
     """
@@ -156,12 +156,12 @@ def model_resource_factory(model, base_resource=odin.Resource, resource_mixins=N
             name = models.CharField(max_length=50)
             age = models.IntegerField()
 
-        PersonResource = model_resource_factory(Person)
+        PersonResource = model_resource_factory(Person, __name__)
 
     :param model: The Django model to generate resource from.
+    :param module: Module you want the class to be a member of; usually you would use __name__.
     :param base_resource: Base resource to extend from; default is ``odin.Resource``.
     :param resource_mixins: Any additional mixin resources; default ``baldr.models.ModelResourceMixin``.
-    :param module: Module you want the class to be a member of; default is ``model.__module__``.
     :param exclude_fields: Any fields that should be excluded from the resource.
     :param include_fields: Explicitly define what fields that should be included on the resource.
     :param generate_mappings: Generate mappings between resource and model (in both directions).
@@ -198,7 +198,7 @@ def model_resource_factory(model, base_resource=odin.Resource, resource_mixins=N
     # Setup other require attributes and create type
     if isinstance(module, str):
         module = sys.modules[module]
-    attrs['__module__'] = module or model.__module__
+    attrs['__module__'] = module.__name__
     attrs['model'] = model
     resource_type = type(resource_type_name, bases, attrs)
 
