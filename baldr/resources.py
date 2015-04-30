@@ -35,7 +35,7 @@ class Error(odin.Resource):
     """
     Response returned for errors.
 
-    The *meta* value should be utilised to provide additional information that
+    The *meta* field should be utilised to provide additional information that
     is specific to the error. Eg if validation failed then meta would contain
     an object that maps field names to error messages.
 
