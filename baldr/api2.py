@@ -273,6 +273,7 @@ class ResourceApi(ResourceApiCommon):
 
     def base_urls(self):
         return super(ResourceApi, self).base_urls() + [
+
             # List URL
             self.url(
                 r'',
