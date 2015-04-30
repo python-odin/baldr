@@ -474,7 +474,10 @@ class ApiVersion(ApiCollection):
     Along with helper methods for building URL patterns.
     """
     def __init__(self, *resource_apis, **kwargs):
-        kwargs.setdefault('api_name', kwargs.pop('version', 'v1'))
+        kwargs['api_name'] = "%s/%s" % (
+            kwargs.get('api_name', 'api'),
+            kwargs.pop('version', 'v1')
+        )
         super(ApiVersion, self).__init__(*resource_apis, **kwargs)
 
 
