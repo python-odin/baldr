@@ -108,5 +108,5 @@ class ResourceApi(object):
     def __init__(self, api_name=None):
         if api_name:
             self.api_name = api_name
-        elif not hasattr(self, 'api_name'):
-            self.api_name = "%ss" % self.resource._meta.name
+        # elif not hasattr(self, 'api_name'):
+        #     self.api_name = "%ss" % self.resource._meta.name
