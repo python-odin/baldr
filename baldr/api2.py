@@ -1,44 +1,59 @@
 from __future__ import absolute_import
+import six
 from django.conf import settings
-from django.conf.urls import url
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
-import six
-from . import content_type_resolvers
-from .api import CODECS
+from .api import ResourceApiCommon
 from baldr.exceptions import ImmediateHttpResponse, ImmediateErrorHttpResponse
 from baldr.resources import Error
 from odin.exceptions import ValidationError
-from odin.utils import cached_property
 
-
+# Well known methods
+HEAD = 'HEAD'
 GET = 'GET'
 POST = 'POST'
 PUT = 'PUT'
 DELETE = 'DELETE'
 
+# Type of path
 PATH_TYPE_LIST = 'list'
 PATH_TYPE_DETAIL = 'detail'
 
 
 def route(func=None, path_type=None, method=None, action=None, resource=None):
     """
-    Decorator for defining a route.
+    Decorator for defining a route. Usually one of the helpers (listing,
+    create, detail, update, delete) would be used in place of the route
+    decorator.
+
+    Usage::
+
+        class ItemApi(ResourceApi):
+            resource = Item
+
+            @route(path_type=PATH_TYPE_LIST, method=GET)
+            def list_items(self, request):
+
+                ...
+
+                return items
+
 
     :param func: Function we are routing
     :param path_type: Type of path, list/detail or custom.
     :param method: HTTP method(s) this function responses to.
     :param action: Action name
-    :param resource: Specify the resource that this function encodes/decodes, default is the one specified on the
-        ResourceAPI instance.
+    :param resource: Specify the resource that this function
+        encodes/decodes, default is the one specified on the ResourceAPI
+        instance.
 
     """
     if isinstance(method, six.string_types):
         method = (method,)
 
     def inner(func):
-        func._route = (path_type, method, action)
+        func.route = (path_type, method, action)
         func.resource = resource
         return func
 
@@ -75,134 +90,29 @@ class ResourceApiBase(type):
             # If this isn't a subclass of don't do anything special.
             return super_new(mcs, name, bases, attrs)
 
-        # Get list of routes
+        # Build list of available routes.
         routes = []
         for view, obj in attrs.items():
-            if callable(obj) and hasattr(obj, '_route'):
-                path_type, method, action = obj._route
+            if callable(obj) and hasattr(obj, 'route'):
+                path_type, method, action = obj.route
                 routes.append((path_type, method, action, view))
-                delattr(obj, '_route')
+                delattr(obj, 'route')
         attrs['routes'] = routes
         return super_new(mcs, name, bases, attrs)
 
 
-class ResourceApiCommon(object):
-    # The resource this API is modelled on.
-    resource = None
-
-    # Handlers used to resolve a content-type from a request.
-    # These are checked in the order defined until one returns a content-type
-    content_type_resolvers = [
-        content_type_resolvers.accepts_header(),
-        content_type_resolvers.content_type_header(),
-        content_type_resolvers.settings_default(),
-    ]
-
-    # Codecs that are supported for Encoding/Decoding resources.
-    registered_codecs = CODECS
-    url_prefix = r''
-
-    def __init__(self, api_name=None):
-        if api_name:
-            self.api_name = api_name
-        elif not hasattr(self, 'api_name'):
-            self.api_name = "%ss" % self.resource._meta.name
-
-    def url(self, regex, view, kwargs=None, name=None, prefix=''):
-        """
-        Behaves like the django built in ``url`` method but constrains the URL to the API name.
-
-        :param regex: This should be a part regex that applies only to the targeted method ie::
-
-            self.url("(\d+)", ...)
-        """
-        if regex:
-            return url(r'^%s/%s/?$' % (self.url_prefix + self.api_name.lower(), regex), view, kwargs, name, prefix)
-        else:
-            return url(r'^%s/?$' % (self.url_prefix + self.api_name.lower()), view, kwargs, name, prefix)
-
-    @property
-    def urls(self):
-        """
-        Return url conf for resource object.
-        """
-        return self.base_urls()
-
-    def resolve_content_type(self, request):
-        """
-        Resolve the request content type from the request.
-
-        :returns: Identified content type; or ``None`` if content type is not identified.
-
-        """
-        for resolver in self.content_type_resolvers:
-            content_type = resolver(request)
-            if content_type:
-                return content_type
-
-    def handle_500(self, request, exception):
-        """
-        Handle *un-handled* exceptions
-
-        :param request: The request object.
-        :param exception: The exception that was un-handled.
-        :return: An ``HttpError`` response resource.
-
-        """
-        # This is an unknown exception, return an unknown error message.
-        if settings.DEBUG:
-            # If we are in debug mode return more details and the stack-trace.
-            import sys
-            import traceback
-
-            the_trace = '\n'.join(traceback.format_exception(*(sys.exc_info())))
-            return Error(500, 50000, "An unknown error has occurred, the developers have been notified.",
-                         str(exception), the_trace)
-        else:
-            return Error(500, 50000, "An unknown error has occurred, the developers have been notified.")
-
-    def base_urls(self):
-        """
-        Base URL mappings for this API.
-        """
-        return []
-
-    def handle_authorisation(self, request):
-        """
-        Evaluate if a request is authorised.
-
-        :param request: The current Django request object.
-
-        """
-        pass
-
-    def decode_body(self, request):
-        """
-        Helper method that ensures that decodes any body content into a string object (this is needed by the json
-        module for example).
-        """
-        body = request.body
-        if isinstance(body, bytes):
-            return body.decode('UTF8')
-        return body
-
-
 @six.add_metaclass(ResourceApiBase)
 class ResourceApi(ResourceApiCommon):
-    # The resource this API is modelled on.
-    resource = None
+    """
+    Base class for version 2 of the Resource API.
 
-    # Handlers used to resolve a content-type from a request.
-    # These are checked in the order defined until one returns a content-type
-    content_type_resolvers = [
-        content_type_resolvers.accepts_header(),
-        content_type_resolvers.content_type_header(),
-        content_type_resolvers.settings_default(),
-    ]
+    The API now uses a meta class to extract routes from methods that have
+    been decorated with route information.
 
-    # Codecs that are supported for Encoding/Decoding resources.
-    registered_codecs = CODECS
-    url_prefix = r''
+    """
+    # Table containing lookup information to simplify dispatch of incoming
+    # requests to the appropriate views
+    route_table = None
 
     def base_urls(self):
         url_table = {}
@@ -227,8 +137,9 @@ class ResourceApi(ResourceApiCommon):
             method_map = route_table.setdefault(route_key, {})
             for method in methods:
                 method_map[method] = view
-            self.route_table = route_table
 
+        # Store the route table at the same time
+        self.route_table = route_table
         return list(url_table.values())
 
     def wrap_dispatch(self, route_key):
@@ -306,7 +217,9 @@ class ResourceApi(ResourceApiCommon):
         else:
             method = getattr(self, request_method, None)
 
-        self.handle_authorisation(request)
+        # Authorisation hook
+        if hasattr(self, 'handle_authorisation'):
+            self.handle_authorisation(request)
 
         # Allow for a pre_dispatch hook, a response from pre_dispatch would indicate an override of kwargs
         if hasattr(self, 'pre_dispatch'):

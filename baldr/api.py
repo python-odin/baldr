@@ -22,7 +22,7 @@ else:
     CODECS[msgpack_codec.CONTENT_TYPE] = msgpack_codec
 
 
-class ResourceApiBase(object):
+class ResourceApiCommon(object):
     # The resource this API is modelled on.
     resource = None
 
@@ -97,6 +97,25 @@ class ResourceApiBase(object):
         else:
             return Error(500, 50000, "An unknown error has occurred, the developers have been notified.")
 
+    def base_urls(self):
+        """
+        Base URL mappings for this API.
+        """
+        return []
+
+    @staticmethod
+    def decode_body(request):
+        """
+        Helper method that ensures that decodes any body content into a string object (this is needed by the json
+        module for example).
+        """
+        body = request.body
+        if isinstance(body, bytes):
+            return body.decode('UTF8')
+        return body
+
+
+class ResourceApiBase(ResourceApiCommon):
     def wrap_view(self, view):
         """
         This method provides the main entry point for URL mappings in the ``base_urls`` method.
@@ -159,12 +178,6 @@ class ResourceApiBase(object):
                 return HttpResponse(codec.dumps(resource), content_type=codec.CONTENT_TYPE, status=status)
         return wrapper
 
-    def base_urls(self):
-        """
-        Base URL mappings for this API.
-        """
-        return []
-
     def dispatch(self, request, request_type, **kwargs):
         """
         Primary method used to dispatch incoming requests to the appropriate method.
@@ -205,25 +218,6 @@ class ResourceApiBase(object):
                 'Allow': ','.join(map(str.upper, allowed))
             })
         return request_method
-
-    def handle_authorisation(self, request):
-        """
-        Evaluate if a request is authorised.
-
-        :param request: The current Django request object.
-
-        """
-        pass
-
-    def decode_body(self, request):
-        """
-        Helper method that ensures that decodes any body content into a string object (this is needed by the json
-        module for example).
-        """
-        body = request.body
-        if isinstance(body, bytes):
-            return body.decode('UTF8')
-        return body
 
 
 class ResourceApi(ResourceApiBase):
@@ -474,10 +468,7 @@ class ApiVersion(ApiCollection):
     Along with helper methods for building URL patterns.
     """
     def __init__(self, *resource_apis, **kwargs):
-        kwargs['api_name'] = "%s/%s" % (
-            kwargs.get('api_name', 'api'),
-            kwargs.pop('version', 'v1')
-        )
+        kwargs.setdefault('api_name', kwargs.pop('version', 'v1'))
         super(ApiVersion, self).__init__(*resource_apis, **kwargs)
 
 
@@ -501,7 +492,7 @@ class Api(object):
 
     def patterns(self):
         urls = [url(r'^%s/%s/' % (self.api_name, v.api_name), v.include()) for v in self.versions]
-        urls.append(url(r'^%s/' % self.api_name, self._unknown_version))
+        urls.append(url(r'^%s/$' % self.api_name, self._unknown_version))
         return urls
 
     def _unknown_version(self, _):

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-from baldr.api import ResourceApiBase
+from baldr.api import ResourceApiCommon
 from baldr.exceptions import ImmediateErrorHttpResponse
 
 
-class LoginRequiredMixin(ResourceApiBase):
+class LoginRequiredMixin(ResourceApiCommon):
     """
     """
     def handle_authorisation(self, request):
