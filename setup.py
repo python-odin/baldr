@@ -7,7 +7,7 @@ except IOError:
 
 setup(
     name='baldr',
-    version='0.5.2',
+    version='0.6',
     url='https://github.com/timsavage/baldr',
     license='LICENSE',
     author='Tim Savage',
@@ -15,10 +15,10 @@ setup(
     description='Odin integration to Django',
     long_description=long_description,
     packages=find_packages(exclude=("django_test_runner",)),
-    install_requires=['six', 'odin>=0.5.4', 'django>=1.5'],
+    install_requires=['six', 'odin>=0.5.7', 'django>=1.7'],
 
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Framework :: Django',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
