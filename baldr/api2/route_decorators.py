@@ -3,7 +3,11 @@ import six
 from baldr.resources import Listing
 from .constants import *
 
-__all__ = ('route', 'detail_route', 'action', 'detail_action', 'listing', 'create', 'detail', 'update', 'delete')
+__all__ = (
+    'route', 'detail_route', 'action', 'detail_action',
+    'listing',
+    'create', 'detail', 'update', 'delete'
+)
 
 
 # Route definition decorators
