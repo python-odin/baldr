@@ -4,10 +4,15 @@ from baldr.resources import Listing
 from .constants import *
 
 __all__ = (
+    # Basic routes
     'route', 'detail_route', 'action', 'detail_action',
-    'listing',
-    'create', 'detail', 'update', 'delete'
+    # Handlers
+    'list_response',
+    # Shortcuts
+    'listing', 'create', 'detail', 'update', 'delete'
 )
+
+route_count = 0
 
 
 # Route definition decorators
@@ -43,8 +48,12 @@ def route(func=None, name=None, path_type=PATH_TYPE_BASE, method=GET, resource=N
     if isinstance(method, six.string_types):
         method = (method,)
 
+    global route_count
+    route_number = route_count
+    route_count += 1
+
     def inner(func):
-        func.route = (path_type, method, name)
+        func.route = (route_number, path_type, method, name)
         func.resource = resource
         return func
 
@@ -59,7 +68,7 @@ def detail_route(func=None, name=None, method=GET, resource=None):
 detail_action = detail_route
 
 
-# Handling
+# Handlers
 
 def list_response(func=None):
     """
@@ -83,8 +92,8 @@ def list_response(func=None):
 
 # Shortcut methods
 
-listing = lambda f=None, resource=None: route(list_response(f), None, PATH_TYPE_BASE, GET, resource)
-create = lambda f=None, resource=None: route(f, None, PATH_TYPE_BASE, POST, resource)
-detail = lambda f=None, resource=None: route(f, None, PATH_TYPE_DETAIL, GET, resource)
-update = lambda f=None, resource=None: route(f, None, PATH_TYPE_DETAIL, PUT, resource)
-delete = lambda f=None, resource=None: route(f, None, PATH_TYPE_DETAIL, DELETE, resource)
+listing = lambda f=None, name=None, resource=None: route(list_response(f), name, PATH_TYPE_BASE, GET, resource)
+create = lambda f=None, name=None, resource=None: route(f, name, PATH_TYPE_BASE, POST, resource)
+detail = lambda f=None, name=None, resource=None: route(f, name, PATH_TYPE_DETAIL, GET, resource)
+update = lambda f=None, name=None, resource=None: route(f, name, PATH_TYPE_DETAIL, PUT, resource)
+delete = lambda f=None, name=None, resource=None: route(f, name, PATH_TYPE_DETAIL, DELETE, resource)

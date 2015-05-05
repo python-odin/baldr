@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from collections import OrderedDict
 import six
 from .constants import *
 from .route_decorators import *
@@ -21,18 +22,21 @@ class ResourceApiBase(type):
             # If this isn't a subclass of don't do anything special.
             return super_new(mcs, name, bases, attrs)
 
-        # Get routes from parent objects
         routes = []
+
+        # Get local routes and sort them by route number
+        for view, obj in attrs.items():
+            if callable(obj) and hasattr(obj, 'route'):
+                route_number, path_type, method, action_name = obj.route
+                routes.append((route_number, path_type, method, action_name, view))
+                delattr(obj, 'route')
+        routes = sorted(routes, key=lambda o: o[0])
+
+        # Get routes from parent objects
         for parent in parents:
             if hasattr(parent, 'routes'):
                 routes.extend(parent.routes)
 
-        # Get local routes
-        for view, obj in attrs.items():
-            if callable(obj) and hasattr(obj, 'route'):
-                path_type, method, action_name = obj.route
-                routes.append((path_type, method, action_name, view))
-                delattr(obj, 'route')
         attrs['routes'] = routes
 
         return super_new(mcs, name, bases, attrs)
@@ -52,10 +56,10 @@ class ResourceApi(ResourceApiCommon):
     route_table = None
 
     def base_urls(self):
-        url_table = {}
+        url_table = OrderedDict()
         route_table = {}
         for route_ in self.routes:
-            path_type, methods, action_name, view = route_
+            route_number, path_type, methods, action_name, view = route_
             route_key = "%s-%s" % (path_type, action_name) if action_name else path_type
 
             # Populate url_table
@@ -76,7 +80,7 @@ class ResourceApi(ResourceApiCommon):
                 method_map[method] = view
 
         # Store the route table at the same time
-        self.route_table = route_table
+        self.route_table = dict(route_table)
         return list(url_table.values())
 
     def dispatch_to_view(self, route_key, request, *args, **kwargs):

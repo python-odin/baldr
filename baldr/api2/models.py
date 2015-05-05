@@ -34,13 +34,14 @@ class ModelResourceApi(ResourceApi):
     def get_queryset(self, request):
         return self.model.objects.all()
 
-    def get_model(self, request, resource_id):
+    def get_instance(self, request, resource_id):
         return get_object_or_404(self.get_queryset(request), **{
             self.model_id_field: resource_id
         })
 
-    def save_model(self, request, model):
-        model.save()
+    def save_model(self, request, instance, is_new=False):
+        instance.save()
+        return instance
 
 
 class ListMixin(ModelResourceApi):
@@ -54,23 +55,31 @@ class ListMixin(ModelResourceApi):
 class CreateMixin(ModelResourceApi):
     @create
     def object_create(self, request):
-        pass
+        resource = self.resource_from_body(request)
+        instance = self.to_model_mapping.apply(resource)
+        instance.id = None
+        self.save_model(request, instance, True)
+        return self.to_resource_mapping.apply(instance), 201
 
 
 class DetailMixin(ModelResourceApi):
     @detail
     def object_detail(self, request, resource_id):
-        instance = self.get_model(request, resource_id)
+        instance = self.get_instance(request, resource_id)
         return self.to_resource_mapping.apply(instance)
 
 
 class UpdateMixin(ModelResourceApi):
     @update
     def object_update(self, request, resource_id):
-        pass
+        instance = self.get_instance(request, resource_id)
+        resource = self.resource_from_body(request)
+        self.to_model_mapping(resource).update(instance)
+        self.save_model(request, instance, False)
+        return self.to_resource_mapping.apply(instance), 200
 
 
 class DeleteMixin(ModelResourceApi):
     @delete
     def object_delete(self, request, resource_id):
-        self.get_model(request, resource_id).delete()
+        self.get_instance(request, resource_id).delete()
