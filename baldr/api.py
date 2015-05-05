@@ -25,10 +25,19 @@ else:
 class ResourceApiCommon(object):
     # The resource this API is modelled on.
     resource = None
+    resource_id_regex = r'\d+'
 
-    # Handlers used to resolve a content-type from a request.
-    # These are checked in the order defined until one returns a content-type
-    content_type_resolvers = [
+    # Handlers used to resolve the request content-type of the request body.
+    # These are checked in the order defined until one returns a content-type.
+    request_type_resolvers = [
+        content_type_resolvers.content_type_header(),
+        content_type_resolvers.accepts_header(),
+        content_type_resolvers.settings_default(),
+    ]
+
+    # Handlers used to resolve the response content-type.
+    # These are checked in the order defined until one returns a content-type.
+    response_type_resolvers = [
         content_type_resolvers.accepts_header(),
         content_type_resolvers.content_type_header(),
         content_type_resolvers.settings_default(),
@@ -64,14 +73,26 @@ class ResourceApiCommon(object):
         """
         return self.base_urls()
 
-    def resolve_content_type(self, request):
+    def resolve_request_type(self, request):
         """
         Resolve the request content type from the request.
 
         :returns: Identified content type; or ``None`` if content type is not identified.
 
         """
-        for resolver in self.content_type_resolvers:
+        for resolver in self.request_type_resolvers:
+            content_type = resolver(request)
+            if content_type:
+                return content_type
+
+    def resolve_response_type(self, request):
+        """
+        Resolve the response content type from the request.
+
+        :returns: Identified content type; or ``None`` if content type is not identified.
+
+        """
+        for resolver in self.response_type_resolvers:
             content_type = resolver(request)
             if content_type:
                 return content_type
@@ -114,8 +135,33 @@ class ResourceApiCommon(object):
             return body.decode('UTF8')
         return body
 
+    def resource_from_body(self, request, allow_multiple=False, resource=None):
+        """
+        Get a resource instance from ``request.body``.
+        """
+        resource = resource or self.resource
 
-class ResourceApiBase(ResourceApiCommon):
+        try:
+            body = self.decode_body(request)
+        except UnicodeDecodeError as ude:
+            raise ImmediateErrorHttpResponse(400, 40099, "Unable to decode request body.", str(ude))
+
+        try:
+            resource = request.request_codec.loads(body, resource=resource, full_clean=False)
+        except ValueError as ve:
+            raise ImmediateErrorHttpResponse(400, 40098, "Unable to load resource.", str(ve))
+        except CodecDecodeError as cde:
+            raise ImmediateErrorHttpResponse(400, 40096, "Unable to decode body.", str(cde))
+
+        # Check an array of data hasn't been supplied
+        if not allow_multiple and isinstance(resource, list):
+            raise ImmediateErrorHttpResponse(400, 40097, "Expected a single resource not a list.")
+
+        return resource
+
+    def dispatch_to_view(self, view, request, *args, **kwargs):
+        raise NotImplementedError()
+
     def wrap_view(self, view):
         """
         This method provides the main entry point for URL mappings in the ``base_urls`` method.
@@ -123,23 +169,28 @@ class ResourceApiBase(ResourceApiCommon):
         @csrf_exempt
         def wrapper(request, *args, **kwargs):
             # Resolve content type used to encode/decode request/response content.
-            content_type = self.resolve_content_type(request)
+            response_type = self.resolve_response_type(request)
+            request_type = self.resolve_request_type(request)
             try:
-                request.codec = codec = self.registered_codecs[content_type]
+                request.request_codec = self.registered_codecs[request_type]
+                request.response_codec = response_codec = self.registered_codecs[response_type]
             except KeyError:
                 # This is just a plain HTTP response, we can't provide a rich response when the content type is unknown
                 return HttpResponse(content="Content cannot be returned in the format requested.", status=406)
 
-            callback = getattr(self, view)
             try:
-                result = callback(request, *args, **kwargs)
+                result = self.dispatch_to_view(view, request, *args, **kwargs)
             except Http404 as e:
                 # Item is not found.
                 status = 404
                 resource = Error(status, 40400, str(e))
             except ImmediateHttpResponse as e:
                 # An exception used to return a response immediately, skipping any further processing.
-                response = HttpResponse(codec.dumps(e.resource), content_type=codec.CONTENT_TYPE, status=e.status)
+                response = HttpResponse(
+                    response_codec.dumps(e.resource),
+                    content_type=response_codec.CONTENT_TYPE,
+                    status=e.status
+                )
                 for key, value in (e.headers or {}).items():
                     response[key] = value
                 return response
@@ -161,7 +212,7 @@ class ResourceApiBase(ResourceApiCommon):
             except Exception as e:
                 # Special case when a request raises a 500 error. If we are in debug mode and a default is used (ie
                 # request does not explicitly specify a content type) fall back to the Django default exception page.
-                if settings.DEBUG and getattr(content_type, 'is_default', False):
+                if settings.DEBUG and getattr(response_codec, 'is_default', False):
                     raise
                 # Catch any other exceptions and pass them to the 500 handler for evaluation.
                 resource = self.handle_500(request, e)
@@ -175,8 +226,24 @@ class ResourceApiBase(ResourceApiCommon):
             if resource is None:
                 return HttpResponse(status=status)
             else:
-                return HttpResponse(codec.dumps(resource), content_type=codec.CONTENT_TYPE, status=status)
+                return HttpResponse(
+                    response_codec.dumps(resource),
+                    content_type=response_codec.CONTENT_TYPE,
+                    status=status
+                )
         return wrapper
+
+
+class ResourceApi(ResourceApiCommon):
+    """
+    Provides an API that returns a specified resource object.
+    """
+    list_allowed_methods = ['get']
+    detail_allowed_methods = ['get']
+
+    def dispatch_to_view(self, view, request, *args, **kwargs):
+        callback = getattr(self, view)
+        return callback(request, *args, **kwargs)
 
     def dispatch(self, request, request_type, **kwargs):
         """
@@ -191,7 +258,9 @@ class ResourceApiBase(ResourceApiCommon):
         if method is None:
             raise Http404()
 
-        self.handle_authorisation(request)
+        # Authorisation hook
+        if hasattr(self, 'handle_authorisation'):
+            self.handle_authorisation(request)
 
         # Allow for a pre_dispatch hook, a response from pre_dispatch would indicate an override of kwargs
         if hasattr(self, 'pre_dispatch'):
@@ -219,15 +288,6 @@ class ResourceApiBase(ResourceApiCommon):
             })
         return request_method
 
-
-class ResourceApi(ResourceApiBase):
-    """
-    Provides an API that returns a specified resource object.
-    """
-    list_allowed_methods = ['get']
-    detail_allowed_methods = ['get']
-    resource_id_regex = r'\d+'
-
     def base_urls(self):
         return super(ResourceApi, self).base_urls() + [
             # List URL
@@ -247,28 +307,6 @@ class ResourceApi(ResourceApiBase):
 
     def dispatch_detail(self, request, **kwargs):
         return self.dispatch(request, 'detail', **kwargs)
-
-    def resource_from_body(self, request, allow_multiple=False):
-        """
-        Get a resource instance from ``request.body``.
-        """
-        try:
-            body = self.decode_body(request)
-        except UnicodeDecodeError as ude:
-            raise ImmediateErrorHttpResponse(400, 40099, "Unable to decode request body.", str(ude))
-
-        try:
-            resource = request.codec.loads(body, resource=self.resource, full_clean=False)
-        except ValueError as ve:
-            raise ImmediateErrorHttpResponse(400, 40098, "Unable to load resource.", str(ve))
-        except CodecDecodeError as cde:
-            raise ImmediateErrorHttpResponse(400, 40096, "Unable to decode body.", str(cde))
-
-        # Check an array of data hasn't been supplied
-        if not allow_multiple and isinstance(resource, list):
-            raise ImmediateErrorHttpResponse(400, 40097, "Expected a single resource not a list.")
-
-        return resource
 
 
 class ActionMixin(ResourceApi):
