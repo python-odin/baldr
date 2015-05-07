@@ -183,7 +183,8 @@ def field_in_filters(model_field, filters):
 
 def model_resource_factory(model, module, base_resource=odin.Resource, resource_mixins=None,
                            exclude_fields=None, include_fields=None, generate_mappings=True,
-                           return_mappings=False, additional_fields=None, resource_type_name=None):
+                           return_mappings=False, additional_fields=None, resource_type_name=None,
+                           reverse_exclude_fields=None):
     """
     Factory method for generating a resource from a existing Django model.
 
@@ -217,7 +218,7 @@ def model_resource_factory(model, module, base_resource=odin.Resource, resource_
 
     # Append fields
     exclude_fields = exclude_fields or []
-    reverse_exclude_fields = []
+    reverse_exclude_fields = reverse_exclude_fields or []
     for mf in model_opts.fields:
         if mf.attname in exclude_fields:
             continue
