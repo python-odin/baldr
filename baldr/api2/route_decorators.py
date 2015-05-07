@@ -12,7 +12,7 @@ __all__ = (
     'listing', 'create', 'detail', 'update', 'delete'
 )
 
-route_count = 0
+_route_count = 0
 
 
 # Route definition decorators
@@ -48,9 +48,9 @@ def route(func=None, name=None, path_type=PATH_TYPE_BASE, method=GET, resource=N
     if isinstance(method, six.string_types):
         method = (method,)
 
-    global route_count
-    route_number = route_count
-    route_count += 1
+    global _route_count
+    route_number = _route_count
+    _route_count += 1
 
     def inner(func):
         func.route = (route_number, path_type, method, name)
