@@ -69,7 +69,10 @@ class ResourceField(models.TextField):
             return value
 
         if isinstance(value, six.string_types):
-            return self.codec.loads(value, self.resource_type, full_clean=False)
+            try:
+                return self.codec.loads(value, self.resource_type, full_clean=False)
+            except odin_exceptions.CodecDecodeError as cde:
+                raise django_exceptions.ValidationError(str(cde))
 
         raise django_exceptions.ValidationError(
             'Value provide is not a valid %s resource' % self.resource_type._meta.resource_name)
