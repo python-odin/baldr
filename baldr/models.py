@@ -132,6 +132,7 @@ MODEL_FIELD_MAP = [
     (ResourceField, odin.DictAs, dict(resource='resource_type', null='null')),
     (ResourceListField, odin.ListOf, dict(resource='resource_type', null='null')),
 
+    (models.AutoField, odin.StringField, dict()),
     (models.DateTimeField, odin.DateTimeField, BASIC_ATTR_MAP),
     (models.TimeField, odin.TimeField, BASIC_ATTR_MAP),
     (models.URLField, odin.UrlField, BASIC_ATTR_MAP),
