@@ -74,7 +74,7 @@ class UpdateMixin(ModelResourceApi):
     def object_update(self, request, resource_id):
         instance = self.get_instance(request, resource_id)
         resource = self.resource_from_body(request)
-        self.to_model_mapping(resource).update(instance)
+        self.to_model_mapping(resource).update(instance, ignore_fields=('id', 'pk'))
         self.save_model(request, instance, False)
         return self.to_resource_mapping.apply(instance), 200
 
