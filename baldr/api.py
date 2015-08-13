@@ -225,6 +225,8 @@ class ResourceApiCommon(object):
                     status = 204 if result is None else 200  # Return 204 (No Content) if result is None.
             if resource is None:
                 return HttpResponse(status=status)
+            elif isinstance(resource, HttpResponse):
+                return resource
             else:
                 return HttpResponse(
                     response_codec.dumps(resource),
