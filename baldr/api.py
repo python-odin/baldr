@@ -1,10 +1,12 @@
 # coding=utf-8
+import logging
 from django.conf import settings
 from django.conf.urls import url, include
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, Http404
 from django.utils.functional import cached_property
 from django.views.decorators.csrf import csrf_exempt
+import sys
 from odin.codecs import json_codec
 from odin.exceptions import ValidationError, CodecDecodeError
 from baldr import content_type_resolvers
@@ -20,6 +22,8 @@ except ImportError:
     pass
 else:
     CODECS[msgpack_codec.CONTENT_TYPE] = msgpack_codec
+
+logger = logging.getLogger('baldr.request')
 
 
 class ResourceApiCommon(object):
@@ -97,7 +101,8 @@ class ResourceApiCommon(object):
             if content_type:
                 return content_type
 
-    def handle_500(self, request, exception):
+    @staticmethod
+    def handle_500(request, exception):
         """
         Handle *un-handled* exceptions
 
@@ -106,16 +111,20 @@ class ResourceApiCommon(object):
         :return: An ``HttpError`` response resource.
 
         """
+        exc_info = sys.exc_info()
+
         # This is an unknown exception, return an unknown error message.
         if settings.DEBUG:
             # If we are in debug mode return more details and the stack-trace.
-            import sys
             import traceback
-
-            the_trace = '\n'.join(traceback.format_exception(*(sys.exc_info())))
+            the_trace = '\n'.join(traceback.format_exception(*exc_info))
             return Error(500, 50000, "An unknown error has occurred, the developers have been notified.",
                          str(exception), the_trace)
         else:
+            logger.error('Internal Server Error: %s', request.path, exc_info=exc_info, extra={
+                'status_code': 500,
+                'request': request
+            })
             return Error(500, 50000, "An unknown error has occurred, the developers have been notified.")
 
     def base_urls(self):
