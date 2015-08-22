@@ -80,7 +80,7 @@ def list_response(func=None, default_offset=0, default_limit=50):
             offset = kwargs['offset'] = int(request.GET.get('offset', default_offset))
             limit = kwargs['limit'] = int(request.GET.get('limit', default_limit))
             result = func(self, request, *args, **kwargs)
-            if result:
+            if result is not None:
                 if isinstance(result, tuple) and len(result) == 2:
                     result, total_count = result
                 else:
