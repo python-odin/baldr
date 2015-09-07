@@ -70,17 +70,17 @@ detail_action = detail_route
 
 # Handlers
 
-def list_response(func=None):
+def list_response(func=None, default_offset=0, default_limit=50):
     """
     Handle processing a list. It is assumed decorator will operate on a class.
     """
     def inner(func):
         def wrapper(self, request, *args, **kwargs):
             # Get paging args from query string
-            offset = kwargs['offset'] = int(request.GET.get('offset', 0))
-            limit = kwargs['limit'] = int(request.GET.get('limit', 50))
+            offset = kwargs['offset'] = int(request.GET.get('offset', default_offset))
+            limit = kwargs['limit'] = int(request.GET.get('limit', default_limit))
             result = func(self, request, *args, **kwargs)
-            if result:
+            if result is not None:
                 if isinstance(result, tuple) and len(result) == 2:
                     result, total_count = result
                 else:
