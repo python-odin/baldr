@@ -4,7 +4,7 @@ import sys
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.functional import Promise
-from django.utils.encoding import force_unicode
+from django.utils.encoding import force_text
 from odin import registration
 from odin.codecs import json_codec
 from odin.fields import NOT_PROVIDED
@@ -269,6 +269,6 @@ def model_resource_factory(model, module, base_resource=odin.Resource, resource_
 
 # Register Django Promises (used by translated strings) with Odin codecs
 
-json_codec.JSON_TYPES[Promise] = force_unicode
+json_codec.JSON_TYPES[Promise] = force_text
 if msgpack_codec:
-    msgpack_codec.TYPE_SERIALIZERS[Promise] = force_unicode
+    msgpack_codec.TYPE_SERIALIZERS[Promise] = force_text
