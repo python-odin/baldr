@@ -269,6 +269,6 @@ def model_resource_factory(model, module, base_resource=odin.Resource, resource_
 
 # Register Django Promises (used by translated strings) with Odin codecs
 
-json_codec.JSON_TYPES[Promise] = lambda v: force_unicode(v)
+json_codec.JSON_TYPES[Promise] = force_unicode
 if msgpack_codec:
-    msgpack_codec.TYPE_SERIALIZERS[Promise] = lambda v: force_unicode(v)
+    msgpack_codec.TYPE_SERIALIZERS[Promise] = force_unicode
