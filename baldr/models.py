@@ -3,10 +3,18 @@ import odin
 import sys
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils.functional import Promise
+from django.utils.encoding import force_unicode
 from odin import registration
+from odin.codecs import json_codec
 from odin.fields import NOT_PROVIDED
 from odin.mapping import FieldResolverBase, mapping_factory
 from baldr.model_fields import ResourceField, ResourceListField
+
+try:
+    from odin.codecs import msgpack_codec
+except ImportError:
+    msgpack_codec = None
 
 
 # Register support for Django Models and Validators
@@ -257,3 +265,10 @@ def model_resource_factory(model, module, base_resource=odin.Resource, resource_
         return resource_type, forward_mapping, reverse_mapping
     else:
         return resource_type
+
+
+# Register Django Promises (used by translated strings) with Odin codecs
+
+json_codec.JSON_TYPES[Promise] = lambda v: force_unicode(v)
+if msgpack_codec:
+    msgpack_codec.TYPE_SERIALIZERS[Promise] = lambda v: force_unicode(v)
