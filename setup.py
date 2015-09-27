@@ -7,7 +7,7 @@ except IOError:
 
 setup(
     name='baldr',
-    version='0.6',
+    version='0.7.0-alpha',
     url='https://github.com/timsavage/baldr',
     license='LICENSE',
     author='Tim Savage',
