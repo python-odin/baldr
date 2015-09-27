@@ -269,6 +269,8 @@ def model_resource_factory(model, module, base_resource=odin.Resource, resource_
 
 # Register Django Promises (used by translated strings) with Odin codecs
 
-json_codec.JSON_TYPES[Promise] = force_text
-if msgpack_codec:
-    msgpack_codec.TYPE_SERIALIZERS[Promise] = force_text
+# TODO: this is not quite correct, will be corrected in updated serialisation tools current in development
+# for odin
+# json_codec.JSON_TYPES[Promise] = force_text
+# if msgpack_codec:
+#     msgpack_codec.TYPE_SERIALIZERS[Promise] = force_text
