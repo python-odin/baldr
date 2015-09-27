@@ -15,8 +15,8 @@ Includes mapping of Django Models to Odin resources, and RESTful API implementat
     :target: https://travis-ci.org/python-odin/baldr
     :alt: Travis CI Status
 
-.. image:: https://coveralls.io/repos/timsavage/baldr/badge.png?branch=master
-    :target: https://coveralls.io/r/timsavage/baldr?branch=master
+.. image:: https://coveralls.io/repos/python-odin/baldr/badge.png?branch=master
+    :target: https://coveralls.io/github/python-odin/baldr?branch=master
     :alt: Coveralls
 
 .. image:: https://requires.io/github/timsavage/baldr/requirements.png?branch=master
