@@ -92,8 +92,73 @@ def list_response(func=None, default_offset=0, default_limit=50):
 
 # Shortcut methods
 
-listing = lambda f=None, name=None, resource=None: route(list_response(f), name, PATH_TYPE_BASE, GET, resource)
-create = lambda f=None, name=None, resource=None: route(f, name, PATH_TYPE_BASE, POST, resource)
-detail = lambda f=None, name=None, resource=None: route(f, name, PATH_TYPE_DETAIL, GET, resource)
-update = lambda f=None, name=None, resource=None: route(f, name, PATH_TYPE_DETAIL, PUT, resource)
-delete = lambda f=None, name=None, resource=None: route(f, name, PATH_TYPE_DETAIL, DELETE, resource)
+def listing(func=None, name=None, resource=None, default_offset=0, default_limit=50):
+    """
+    Decorator to indicate a listing endpoint.
+
+    :param func: Function we are routing
+    :param name: Action name
+    :param resource: Specify the resource that this function
+        encodes/decodes, default is the one specified on the ResourceAPI
+        instance.
+    :param default_offset: Default value for the offset from the start of listing.
+    :param default_limit: Default value for limiting the response size.
+
+    """
+    return route(list_response(func, default_offset, default_limit), name, PATH_TYPE_BASE, GET, resource)
+
+
+def create(func=None, name=None, resource=None):
+    """
+    Decorator to indicate a creation endpoint.
+
+    :param func: Function we are routing
+    :param name: Action name
+    :param resource: Specify the resource that this function
+        encodes/decodes, default is the one specified on the ResourceAPI
+        instance.
+
+    """
+    return route(func, name, PATH_TYPE_BASE, POST, resource)
+
+
+def detail(func=None, name=None, resource=None):
+    """
+    Decorator to indicate a detail endpoint.
+
+    :param func: Function we are routing
+    :param name: Action name
+    :param resource: Specify the resource that this function
+        encodes/decodes, default is the one specified on the ResourceAPI
+        instance.
+
+    """
+    return route(func, name, PATH_TYPE_DETAIL, GET, resource)
+
+
+def update(func=None, name=None, resource=None):
+    """
+    Decorator to indicate an update endpoint.
+
+    :param func: Function we are routing
+    :param name: Action name
+    :param resource: Specify the resource that this function
+        encodes/decodes, default is the one specified on the ResourceAPI
+        instance.
+
+    """
+    return route(func, name, PATH_TYPE_DETAIL, PUT, resource)
+
+
+def delete(func=None, name=None, resource=None):
+    """
+    Decorator to indicate a deletion endpoint.
+
+    :param func: Function we are routing
+    :param name: Action name
+    :param resource: Specify the resource that this function
+        encodes/decodes, default is the one specified on the ResourceAPI
+        instance.
+
+    """
+    return route(func, name, PATH_TYPE_DETAIL, DELETE, resource)
