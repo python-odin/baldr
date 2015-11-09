@@ -19,7 +19,7 @@ _route_count = 0
 
 def route(func=None, name=None, path_type=PATH_TYPE_BASE, method=GET, resource=None):
     """
-    Decorator for defining a route. Usually one of the helpers (listing,
+    Decorator for defining an API route. Usually one of the helpers (listing,
     create, detail, update, delete) would be used in place of the route
     decorator.
 
@@ -40,9 +40,8 @@ def route(func=None, name=None, path_type=PATH_TYPE_BASE, method=GET, resource=N
     :param name: Action name
     :param path_type: Type of path, list/detail or custom.
     :param method: HTTP method(s) this function responses to.
-    :param resource: Specify the resource that this function
-        encodes/decodes, default is the one specified on the ResourceAPI
-        instance.
+    :param resource: Specify the resource that this function encodes/decodes,
+        default is the one specified on the ResourceAPI instance.
 
     """
     if isinstance(method, six.string_types):
