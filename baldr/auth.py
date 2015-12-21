@@ -5,6 +5,7 @@ from baldr.exceptions import ImmediateErrorHttpResponse
 
 class LoginRequiredMixin(ResourceApiCommon):
     """
+    Ensure that a user has logged in.
     """
     def handle_authorisation(self, request):
         """
@@ -13,5 +14,5 @@ class LoginRequiredMixin(ResourceApiCommon):
         :param request: The current Django request object.
 
         """
-        if not request.user.is_authenticated:
+        if not request.user.is_authenticated():
             raise ImmediateErrorHttpResponse(403, 0, 'Login required')
