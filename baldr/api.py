@@ -8,6 +8,7 @@ from django.utils.functional import cached_property
 from django.views.decorators.csrf import csrf_exempt
 import sys
 from odin.codecs import json_codec
+from odin.compatability import deprecated
 from odin.exceptions import ValidationError, CodecDecodeError
 from baldr import content_type_resolvers
 from baldr.exceptions import ImmediateErrorHttpResponse, ImmediateHttpResponse
@@ -245,6 +246,7 @@ class ResourceApiCommon(object):
         return wrapper
 
 
+@deprecated(message="Will be removed in 0.9 in favour of `baldr.api2.ResourceApi`.")
 class ResourceApi(ResourceApiCommon):
     """
     Provides an API that returns a specified resource object.
@@ -320,6 +322,7 @@ class ResourceApi(ResourceApiCommon):
         return self.dispatch(request, 'detail', **kwargs)
 
 
+@deprecated(message="Will be removed in 0.9 in favour of using `baldr.api2.detail_route` decorator.")
 class ActionMixin(ResourceApi):
     """
     Mixin to the resource API to provide support for sub resources, actions, aggregations.
@@ -357,6 +360,7 @@ class ActionMixin(ResourceApi):
         return self.dispatch(request, "%s_detail" % action, **kwargs)
 
 
+@deprecated(message="Will be removed in 0.9 in favour of using `baldr.api2.ListMixin`.")
 class ListMixin(ResourceApi):
     """
     Mixin to the resource API that provides a nice listing API.
@@ -379,6 +383,7 @@ class ListMixin(ResourceApi):
         raise NotImplementedError
 
 
+@deprecated(message="Will be removed in 0.9 in favour of using `baldr.api2.CreateMixin`.")
 class CreateMixin(ResourceApi):
     """
     Mixin to the resource API to provide a Create API.
@@ -407,6 +412,7 @@ class CreateMixin(ResourceApi):
         raise NotImplementedError
 
 
+@deprecated(message="Will be removed in 0.9 in favour of using `baldr.api2.DetailMixin`.")
 class RetrieveMixin(ResourceApi):
     """
     Mixin to the resource API to provide a Retrieve API.
@@ -425,6 +431,7 @@ class RetrieveMixin(ResourceApi):
         raise NotImplementedError
 
 
+@deprecated(message="Will be removed in 0.9 in favour of using `baldr.api2.UpdateMixin`.")
 class UpdateMixin(ResourceApi):
     """
     Mixin to the resource API to provide a Update API.
@@ -454,6 +461,7 @@ class UpdateMixin(ResourceApi):
         raise NotImplementedError
 
 
+@deprecated(message="Will be removed in 0.9 in favour of using `baldr.api2.DeleteMixin`.")
 class DeleteMixin(ResourceApi):
     """
     Mixin to the resource API to provide a Delete API.
