@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
-__version__ = "0.7.0-alpha"
+__version__ = "0.8.dev0"
 default_app_config = 'baldr.app.BaldrAppConfig'
 
 
