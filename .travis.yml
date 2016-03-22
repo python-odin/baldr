@@ -16,7 +16,7 @@ matrix:
       env: DJANGO=django>=1.7,<1.8
 
 install:
-  - pip install -q $DJANGO_PACKAGE six https://github.com/python-odin/odin/archive/master.zip
+  - pip install -q $DJANGO six https://github.com/python-odin/odin/archive/master.zip
   - pip install coveralls
 
 script: coverage run django_test_runner/__main__.py baldr
