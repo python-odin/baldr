@@ -12,7 +12,10 @@ env:
   - DJANGO_PACKAGE="django>=1.6,<1.7"
 
 matrix:
-  allow_failures:
+  exclude:
+    - python: "2.7"
+      env: DJANGO_PACKAGE="django>=1.9,<1.10"
+      env: DJANGO_PACKAGE="django>=1.8,<1.9"
 
 install:
   - pip install -q $DJANGO_PACKAGE six https://github.com/python-odin/odin/archive/master.zip
