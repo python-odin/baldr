@@ -3,15 +3,16 @@ language: python
 python:
   - "2.7"
   - "3.4"
-  - "3.5-dev"
+  - "3.5"
 
 env:
-  - DJANGO_PACKAGE="django>=1.6,<1.7"
+  - DJANGO_PACKAGE="django>=1.9,<1.10"
+  - DJANGO_PACKAGE="django>=1.8,<1.9"
   - DJANGO_PACKAGE="django>=1.7,<1.8"
+  - DJANGO_PACKAGE="django>=1.6,<1.7"
 
 matrix:
   allow_failures:
-    - python: "3.5-dev"
 
 install:
   - pip install -q $DJANGO_PACKAGE six https://github.com/python-odin/odin/archive/master.zip
