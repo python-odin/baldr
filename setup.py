@@ -15,7 +15,7 @@ setup(
     description='Odin integration to Django',
     long_description=long_description,
     packages=find_packages(exclude=("django_test_runner",)),
-    install_requires=['six', 'odin>=0.8.dev0', 'django>=1.7'],
+    install_requires=['six', 'odin>=0.8.1', 'django>=1.7'],
 
     classifiers=[
         'Development Status :: 4 - Beta',
