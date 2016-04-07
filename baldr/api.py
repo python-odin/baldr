@@ -8,7 +8,7 @@ from django.utils.functional import cached_property
 from django.views.decorators.csrf import csrf_exempt
 import sys
 from odin.codecs import json_codec
-from odin.compatability import deprecated
+from odin.compatibility import deprecated
 from odin.exceptions import ValidationError, CodecDecodeError
 from baldr import content_type_resolvers
 from baldr.exceptions import ImmediateErrorHttpResponse, ImmediateHttpResponse
