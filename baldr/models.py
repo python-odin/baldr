@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import inspect
 import odin
 import sys
 from django.core.exceptions import ValidationError
@@ -190,7 +191,7 @@ def field_in_filters(model_field, filters):
     return False
 
 
-def model_resource_factory(model, module, base_resource=odin.Resource, resource_mixins=None,
+def model_resource_factory(model, module=None, base_resource=odin.Resource, resource_mixins=None,
                            exclude_fields=None, include_fields=None, generate_mappings=True,
                            return_mappings=False, additional_fields=None, resource_type_name=None,
                            reverse_exclude_fields=None):
@@ -203,10 +204,11 @@ def model_resource_factory(model, module, base_resource=odin.Resource, resource_
             name = models.CharField(max_length=50)
             age = models.IntegerField()
 
-        PersonResource = model_resource_factory(Person, __name__)
+        PersonResource = model_resource_factory(Person)
 
     :param model: The Django model to generate resource from.
-    :param module: Module you want the class to be a member of; usually you would use __name__.
+    :param module: Module you want the class to be a member of; default uses the calling module. This value can be the
+        name of another module (eg the __name__ field in a module).
     :param base_resource: Base resource to extend from; default is ``odin.Resource``.
     :param resource_mixins: Any additional mixin resources; default ``baldr.models.ModelResourceMixin``.
     :param exclude_fields: Any fields that should be excluded from the resource.
@@ -217,6 +219,7 @@ def model_resource_factory(model, module, base_resource=odin.Resource, resource_
     :param additional_fields: Any additional fields that should be appended to the resource, these can override fields
         from the model.
     :param resource_type_name: Name of the resource created by the factory (default is the name of the model)
+    :param reverse_exclude_fields: Excluded fields from reverse mapping.
 
     """
     resource_mixins = resource_mixins or []
@@ -224,6 +227,11 @@ def model_resource_factory(model, module, base_resource=odin.Resource, resource_
     attrs = {}
     model_opts = model._meta
     resource_type_name = resource_type_name or model_opts.object_name
+
+    # Determine the calling module
+    if module is None:
+        frame = inspect.stack()[1]
+        module = inspect.getmodule(frame[0])
 
     # Append fields
     exclude_fields = exclude_fields or []
