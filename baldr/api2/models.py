@@ -21,7 +21,7 @@ class ModelResourceApi(ResourceApi):
     to_resource_mapping = None
 
     def __init__(self, *args, **kwargs):
-        super(self.__class__, self).__init__(*args, **kwargs)
+        super(ModelResourceApi, self).__init__(*args, **kwargs)
 
         assert self.model, "A model has not been provided."
 
