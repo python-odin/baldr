@@ -1,8 +1,10 @@
 from django.shortcuts import get_object_or_404
 from odin import registration
+from odin.compatibility import deprecated
 from baldr import api
 
 
+@deprecated(message="Will be removed in 0.9 in favour of `baldr.api2.models.ModelResourceApi`.")
 class ModelResourceApi(api.ResourceApi):
     """
     Provides an API for working with Django models.
@@ -20,7 +22,7 @@ class ModelResourceApi(api.ResourceApi):
     to_resource_mapping = None
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(ModelResourceApi, self).__init__(*args, **kwargs)
 
         assert self.model, "A model has not been provided."
 
@@ -42,6 +44,7 @@ class ModelResourceApi(api.ResourceApi):
         model.save()
 
 
+@deprecated(message="Will be removed in 0.9 in favour of `baldr.api2.models.ListMixin`.")
 class ListModelMixin(api.ListMixin, ModelResourceApi):
     """
     Mixin for ``ModelResourceApi`` that fetches a list of resources from a database.
@@ -55,6 +58,7 @@ class ListModelMixin(api.ListMixin, ModelResourceApi):
         return resource_mapping.apply(models)
 
 
+@deprecated(message="Will be removed in 0.9 in favour of `baldr.api2.models.CreateMixin`.")
 class CreateModelMixin(api.CreateMixin, ModelResourceApi):
     """
     Mixin for ``ModelResourceApi`` that handles resource creation to a database.
@@ -66,6 +70,7 @@ class CreateModelMixin(api.CreateMixin, ModelResourceApi):
         return self.to_resource_mapping.apply(new_model), 201
 
 
+@deprecated(message="Will be removed in 0.9 in favour of `baldr.api2.models.DetailMixin`.")
 class RetrieveModelMixin(api.RetrieveMixin, ModelResourceApi):
     """
     Mixin for ``ModelResourceApi`` that handles resource retrieval from a database.
@@ -75,6 +80,7 @@ class RetrieveModelMixin(api.RetrieveMixin, ModelResourceApi):
         return self.to_resource_mapping.apply(model)
 
 
+@deprecated(message="Will be removed in 0.9 in favour of `baldr.api2.models.UpdateMixin`.")
 class UpdateModelMixin(api.UpdateMixin, ModelResourceApi):
     """
     Mixin for ``ModelResourceApi`` that handles resource update to a database.
@@ -89,6 +95,7 @@ class UpdateModelMixin(api.UpdateMixin, ModelResourceApi):
         self.save_model(request, model)
 
 
+@deprecated(message="Will be removed in 0.9 in favour of `baldr.api2.models.DeleteMixin`.")
 class DeleteModelMixin(api.DeleteMixin, ModelResourceApi):
     def delete_resource(self, request, resource_id):
         self.get_model(request, resource_id).delete()
