@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import six
 from baldr.resources import Listing
-from .constants import *
+from . import constants
 
 __all__ = (
     # Basic routes
@@ -17,7 +17,7 @@ _route_count = 0
 
 # Route definition decorators
 
-def route(func=None, name=None, path_type=PATH_TYPE_BASE, method=GET, resource=None):
+def route(func=None, name=None, path_type=constants.PATH_TYPE_BASE, method=constants.GET, resource=None):
     """
     Decorator for defining an API route. Usually one of the helpers (listing,
     create, detail, update, delete) would be used in place of the route
@@ -61,8 +61,8 @@ def route(func=None, name=None, path_type=PATH_TYPE_BASE, method=GET, resource=N
 action = route
 
 
-def detail_route(func=None, name=None, method=GET, resource=None):
-    return route(func, name, PATH_TYPE_DETAIL, method, resource)
+def detail_route(func=None, name=None, method=constants.GET, resource=None):
+    return route(func, name, constants.PATH_TYPE_DETAIL, method, resource)
 
 detail_action = detail_route
 
@@ -104,7 +104,8 @@ def listing(func=None, name=None, resource=None, default_offset=0, default_limit
     :param default_limit: Default value for limiting the response size.
 
     """
-    return route(list_response(func, default_offset, default_limit), name, PATH_TYPE_BASE, GET, resource)
+    return route(list_response(func, default_offset, default_limit),
+                 name, constants.PATH_TYPE_BASE, constants.GET, resource)
 
 
 def create(func=None, name=None, resource=None):
@@ -118,7 +119,7 @@ def create(func=None, name=None, resource=None):
         instance.
 
     """
-    return route(func, name, PATH_TYPE_BASE, POST, resource)
+    return route(func, name, constants.PATH_TYPE_BASE, constants.POST, resource)
 
 
 def detail(func=None, name=None, resource=None):
@@ -132,7 +133,7 @@ def detail(func=None, name=None, resource=None):
         instance.
 
     """
-    return route(func, name, PATH_TYPE_DETAIL, GET, resource)
+    return route(func, name, constants.PATH_TYPE_DETAIL, constants.GET, resource)
 
 
 def update(func=None, name=None, resource=None):
@@ -146,7 +147,7 @@ def update(func=None, name=None, resource=None):
         instance.
 
     """
-    return route(func, name, PATH_TYPE_DETAIL, PUT, resource)
+    return route(func, name, constants.PATH_TYPE_DETAIL, constants.PUT, resource)
 
 
 def delete(func=None, name=None, resource=None):
@@ -160,4 +161,4 @@ def delete(func=None, name=None, resource=None):
         instance.
 
     """
-    return route(func, name, PATH_TYPE_DETAIL, DELETE, resource)
+    return route(func, name, constants.PATH_TYPE_DETAIL, constants.DELETE, resource)

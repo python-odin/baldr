@@ -4,10 +4,7 @@ import odin
 import sys
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.utils.functional import Promise
-from django.utils.encoding import force_text
 from odin import registration
-from odin.codecs import json_codec
 from odin.fields import NOT_PROVIDED
 from odin.mapping import FieldResolverBase, mapping_factory
 from baldr.model_fields import ResourceField, ResourceListField

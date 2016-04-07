@@ -143,12 +143,12 @@ class ResourceFormMetaclass(DeclarativeFieldsMetaclass):
         for opt in ['fields', 'exclude']:
             value = getattr(opts, opt)
             if isinstance(value, six.string_types) and value != ALL_FIELDS:
-                msg = ("%(resource)s.Meta.%(opt)s cannot be a string. "
-                       "Did you mean to type: ('%(value)s',)?" % {
-                            'resource': new_class.__name__,
-                            'opt': opt,
-                            'value': value,
-                       })
+                msg = (
+                    "%(resource)s.Meta.%(opt)s cannot be a string. "
+                    "Did you mean to type: ('%(value)s',)?" % {
+                        'resource': new_class.__name__, 'opt': opt, 'value': value,
+                    }
+                )
                 raise TypeError(msg)
 
         if opts.resource:

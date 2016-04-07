@@ -1,8 +1,8 @@
 from __future__ import absolute_import
 from collections import OrderedDict
 import six
-from .constants import *
-from .route_decorators import *
+from .constants import *  # noqa
+from .route_decorators import *  # noqa
 from ..api import ResourceApiCommon
 from ..exceptions import ImmediateErrorHttpResponse
 
@@ -16,8 +16,10 @@ class ResourceApiBase(type):
         if name == 'NewBase' and attrs == {}:
             return super_new(mcs, name, bases, attrs)
 
-        parents = [b for b in bases if isinstance(b, ResourceApiBase) and not (b.__name__ == 'NewBase'
-                                                                               and b.__mro__ == (b, object))]
+        parents = [
+            b for b in bases
+            if isinstance(b, ResourceApiBase) and not (b.__name__ == 'NewBase' and b.__mro__ == (b, object))
+        ]
         if not parents:
             # If this isn't a subclass of don't do anything special.
             return super_new(mcs, name, bases, attrs)
