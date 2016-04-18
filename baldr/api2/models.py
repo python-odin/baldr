@@ -1,7 +1,9 @@
 from __future__ import absolute_import
 from django.shortcuts import get_object_or_404
 from odin import registration
+from odin.exceptions import CodecDecodeError
 from . import ResourceApi, listing, create, detail, update, delete
+from ..exceptions import ImmediateErrorHttpResponse
 
 
 class ModelResourceApi(ResourceApi):
@@ -38,6 +40,36 @@ class ModelResourceApi(ResourceApi):
         return get_object_or_404(self.get_queryset(request), **{
             self.model_id_field: resource_id
         })
+
+    def update_instance_from_body(self, request, instance, resource=None, ignore_fields=('id', 'pk')):
+        """
+        Get a resource that merges an instance and the request body.
+        :param request:
+        :param instance:
+        :param resource:
+        :param ignore_fields:
+        :return:
+
+        """
+        resource = resource or self.resource
+
+        try:
+            body = self.decode_body(request)
+        except UnicodeDecodeError as ude:
+            raise ImmediateErrorHttpResponse(400, 40100, "Unable to decode request body.", str(ude))
+
+        try:
+            resource = request.request_codec.loads(body, resource=resource, full_clean=False,
+                                                   default_to_not_supplied=True)
+        except ValueError as ve:
+            raise ImmediateErrorHttpResponse(400, 40098, "Unable to load resource.", str(ve))
+        except CodecDecodeError as cde:
+            raise ImmediateErrorHttpResponse(400, 40096, "Unable to decode body.", str(cde))
+
+        # Update only the supplied fields
+        self.to_model_mapping(resource).update(instance, ignore_fields=ignore_fields)
+
+        return resource
 
     def save_model(self, request, instance, is_new=False):
         instance.save()
@@ -85,8 +117,7 @@ class UpdateMixin(ModelResourceApi):
     @update
     def object_update(self, request, resource_id):
         instance = self.get_instance(request, resource_id)
-        resource = self.resource_from_body(request)
-        self.to_model_mapping(resource).update(instance, ignore_fields=('id', 'pk'))
+        self.update_instance_from_body(request, instance)
         self.save_model(request, instance, False)
         return self.to_resource_mapping.apply(instance), 200
 
