@@ -5,7 +5,7 @@ from . import constants
 
 __all__ = (
     # Basic routes
-    'route', 'detail_route', 'action', 'detail_action',
+    'collection', 'resource', 'route', 'detail_route', 'action', 'detail_action',
     # Handlers
     'list_response',
     # Shortcuts
@@ -58,13 +58,13 @@ def route(func=None, name=None, path_type=constants.PATH_TYPE_BASE, method=const
 
     return inner(func) if func else inner
 
-action = route
+collection = action = route
 
 
 def detail_route(func=None, name=None, method=constants.GET, resource=None):
     return route(func, name, constants.PATH_TYPE_DETAIL, method, resource)
 
-detail_action = detail_route
+resource = detail_action = detail_route
 
 
 # Handlers
