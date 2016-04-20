@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from django.shortcuts import get_object_or_404
 from odin import registration
 from odin.exceptions import CodecDecodeError
-from . import ResourceApi, listing, create, detail, update, patch, delete
+from . import ResourceApi, listing, collection, create, detail, update, patch, delete
 from ..exceptions import ImmediateErrorHttpResponse
 
 
@@ -76,6 +76,16 @@ class ModelResourceApi(ResourceApi):
         return instance
 
 
+class CollectionMixin(ModelResourceApi):
+    """
+    Mixin that provides a collection response.
+    """
+    @collection
+    def object_collection(self, request):
+        queryset = self.get_queryset(request)
+        return self.to_resource_mapping.apply(queryset)
+
+
 class ListMixin(ModelResourceApi):
     """
     Mixin that provides a basic paged listing response.
@@ -120,7 +130,7 @@ class UpdateMixin(ModelResourceApi):
         resource = self.resource_from_body(request)
         self.to_model_mapping(resource).update(instance, ignore_fields=('id', 'pk'))
         self.save_model(request, instance, False)
-        return self.to_resource_mapping.apply(instance), 200
+        return self.to_resource_mapping.apply(instance)
 
 
 class PatchMixin(ModelResourceApi):
@@ -132,7 +142,7 @@ class PatchMixin(ModelResourceApi):
         instance = self.get_instance(request, resource_id)
         self.update_instance_from_body(request, instance)
         self.save_model(request, instance, False)
-        return self.to_resource_mapping.apply(instance), 200
+        return self.to_resource_mapping.apply(instance)
 
 
 class DeleteMixin(ModelResourceApi):

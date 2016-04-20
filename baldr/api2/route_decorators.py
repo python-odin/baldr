@@ -5,7 +5,9 @@ from . import constants
 
 __all__ = (
     # Basic routes
-    'collection', 'resource', 'route', 'detail_route', 'action', 'detail_action',
+    'collection', 'collection_action', 'resource', 'resource_action', 'route',
+    # Pending deprecation routes
+    'detail_route', 'action', 'detail_action',
     # Handlers
     'list_response',
     # Shortcuts
@@ -58,13 +60,13 @@ def route(func=None, name=None, path_type=constants.PATH_TYPE_BASE, method=const
 
     return inner(func) if func else inner
 
-collection = action = route
+collection = collection_action = action = route
 
 
-def detail_route(func=None, name=None, method=constants.GET, resource=None):
-    return route(func, name, constants.PATH_TYPE_DETAIL, method, resource)
+def resource_route(func=None, name=None, method=constants.GET, resource=None):
+    return route(func, name, constants.PATH_TYPE_RESOURCE, method, resource)
 
-resource = detail_action = detail_route
+detail_route = detail_action = resource = resource_action = resource_route
 
 
 # Handlers
@@ -105,7 +107,7 @@ def listing(func=None, name=None, resource=None, default_offset=0, default_limit
 
     """
     return route(list_response(func, default_offset, default_limit),
-                 name, constants.PATH_TYPE_BASE, constants.GET, resource)
+                 name, constants.PATH_TYPE_COLLECTION, constants.GET, resource)
 
 
 def create(func=None, name=None, resource=None):
@@ -119,7 +121,7 @@ def create(func=None, name=None, resource=None):
         instance.
 
     """
-    return route(func, name, constants.PATH_TYPE_BASE, constants.POST, resource)
+    return route(func, name, constants.PATH_TYPE_COLLECTION, constants.POST, resource)
 
 
 def detail(func=None, name=None, resource=None):
@@ -133,7 +135,7 @@ def detail(func=None, name=None, resource=None):
         instance.
 
     """
-    return route(func, name, constants.PATH_TYPE_DETAIL, constants.GET, resource)
+    return route(func, name, constants.PATH_TYPE_RESOURCE, constants.GET, resource)
 
 
 def update(func=None, name=None, resource=None):
@@ -147,7 +149,7 @@ def update(func=None, name=None, resource=None):
         instance.
 
     """
-    return route(func, name, constants.PATH_TYPE_DETAIL, constants.PUT, resource)
+    return route(func, name, constants.PATH_TYPE_RESOURCE, constants.PUT, resource)
 
 
 def patch(func=None, name=None, resource=None):
@@ -161,7 +163,7 @@ def patch(func=None, name=None, resource=None):
         instance.
 
     """
-    return route(func, name, constants.PATH_TYPE_DETAIL, constants.PATCH, resource)
+    return route(func, name, constants.PATH_TYPE_RESOURCE, constants.PATCH, resource)
 
 
 def delete(func=None, name=None, resource=None):
@@ -175,4 +177,4 @@ def delete(func=None, name=None, resource=None):
         instance.
 
     """
-    return route(func, name, constants.PATH_TYPE_DETAIL, constants.DELETE, resource)
+    return route(func, name, constants.PATH_TYPE_RESOURCE, constants.DELETE, resource)

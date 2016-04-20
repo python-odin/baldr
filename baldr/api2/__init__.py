@@ -66,7 +66,7 @@ class ResourceApi(ResourceApiCommon):
 
             # Populate url_table
             if route_key not in url_table:
-                if path_type == PATH_TYPE_BASE:
+                if path_type == PATH_TYPE_COLLECTION:
                     regex = action_name or r''
                 else:
                     if action_name:
