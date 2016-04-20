@@ -19,7 +19,7 @@ _route_count = 0
 
 # Route definition decorators
 
-def route(func=None, name=None, path_type=constants.PATH_TYPE_BASE, method=constants.GET, resource=None):
+def route(func=None, name=None, path_type=constants.PATH_TYPE_COLLECTION, method=constants.GET, resource=None):
     """
     Decorator for defining an API route. Usually one of the helpers (listing,
     create, detail, update, delete) would be used in place of the route
