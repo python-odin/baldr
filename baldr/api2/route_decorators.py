@@ -9,7 +9,7 @@ __all__ = (
     # Handlers
     'list_response',
     # Shortcuts
-    'listing', 'create', 'detail', 'update', 'delete'
+    'listing', 'create', 'detail', 'update', 'patch', 'delete'
 )
 
 _route_count = 0
@@ -148,6 +148,20 @@ def update(func=None, name=None, resource=None):
 
     """
     return route(func, name, constants.PATH_TYPE_DETAIL, constants.PUT, resource)
+
+
+def patch(func=None, name=None, resource=None):
+    """
+    Decorator to indicate a patch endpoint.
+
+    :param func: Function we are routing
+    :param name: Action name
+    :param resource: Specify the resource that this function
+        encodes/decodes, default is the one specified on the ResourceAPI
+        instance.
+
+    """
+    return route(func, name, constants.PATH_TYPE_DETAIL, constants.PATCH, resource)
 
 
 def delete(func=None, name=None, resource=None):

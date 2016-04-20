@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from django.shortcuts import get_object_or_404
 from odin import registration
 from odin.exceptions import CodecDecodeError
-from . import ResourceApi, listing, create, detail, update, delete
+from . import ResourceApi, listing, create, detail, update, patch, delete
 from ..exceptions import ImmediateErrorHttpResponse
 
 
@@ -115,6 +115,19 @@ class UpdateMixin(ModelResourceApi):
     Mixin that provides a basic model update method.
     """
     @update
+    def object_update(self, request, resource_id):
+        instance = self.get_instance(request, resource_id)
+        resource = self.resource_from_body(request)
+        self.to_model_mapping(resource).update(instance, ignore_fields=('id', 'pk'))
+        self.save_model(request, instance, False)
+        return self.to_resource_mapping.apply(instance), 200
+
+
+class PatchMixin(ModelResourceApi):
+    """
+    Mixin that provides a basic model update method.
+    """
+    @patch
     def object_update(self, request, resource_id):
         instance = self.get_instance(request, resource_id)
         self.update_instance_from_body(request, instance)
