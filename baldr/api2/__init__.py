@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 from collections import OrderedDict
 import six
+from django.http import HttpResponse
+
 from .constants import *  # noqa
 from .route_decorators import *  # noqa
 from ..api import ResourceApiCommon
@@ -57,6 +59,9 @@ class ResourceApi(ResourceApiCommon):
     # requests to the appropriate views
     route_table = None
 
+    # Respond to the options method.
+    respond_to_options = True
+
     def base_urls(self):
         url_table = OrderedDict()
         route_table = {}
@@ -80,6 +85,10 @@ class ResourceApi(ResourceApiCommon):
             method_map = route_table.setdefault(route_key, {})
             for method in methods:
                 method_map[method] = view
+
+            # Add options
+            if self.respond_to_options:
+                method_map.setdefault(constants.OPTIONS, 'options_response')
 
         # Store the route table at the same time
         self.route_table = dict(route_table)
@@ -109,6 +118,10 @@ class ResourceApi(ResourceApiCommon):
             if response is not None:
                 kwargs = response
 
+        # Apply route key to kwargs on OPTIONS requests
+        if request.method == constants.OPTIONS:
+            kwargs['route_key'] = route_key
+
         result = method(request, **kwargs)
 
         # Allow for a post_dispatch hook, the response of which is returned
@@ -116,3 +129,9 @@ class ResourceApi(ResourceApiCommon):
             return self.post_dispatch(request, result)
         else:
             return result
+
+    def options_response(self, request, route_key, **kwargs):
+        routes = self.route_table[route_key]
+        response = HttpResponse(status=204)
+        response['Allow'] = ','.join(method for method, route in routes.items() if route != 'options_response')
+        return response
