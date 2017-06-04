@@ -1,9 +1,11 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+
 import os
 import sys
-from optparse import OptionParser
 import django
+
+from optparse import OptionParser
 from django.conf import settings
 from django.core.management import call_command
 
@@ -78,6 +80,7 @@ def main():
         django.setup()
 
     call_command("test", app_name)
+
 
 if __name__ == "__main__":
     main()

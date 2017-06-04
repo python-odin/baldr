@@ -63,11 +63,13 @@ def route(func=None, name=None, path_type=constants.PATH_TYPE_COLLECTION, method
 
     return inner(func) if func else inner
 
+
 collection = collection_action = action = route
 
 
 def resource_route(func=None, name=None, method=constants.GET, resource=None):
     return route(func, name, constants.PATH_TYPE_RESOURCE, method, resource)
+
 
 detail_route = detail_action = resource_route
 

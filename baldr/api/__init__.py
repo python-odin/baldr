@@ -15,11 +15,13 @@ from odin.codecs import json_codec
 from odin.exceptions import CodecDecodeError, ValidationError
 from odin.utils import getmeta
 
-from .constants import *  # noqa
-from .route_decorators import *  # noqa
 from .. import content_type_resolvers
 from ..resources import Error
 from ..exceptions import ImmediateErrorHttpResponse, ImmediateHttpResponse
+
+from .constants import *  # noqa
+from .route_decorators import *  # noqa
+
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +73,7 @@ class ResourceApiCommon(object):
         Regex should be a part regex that applies only to the targeted method ie::
 
             self.url("(\d+)", ...)
-            
+
         """
         if regex:
             return url(r'^%s/%s/?$' % (self.url_prefix + self.api_name.lower(), regex), view, kwargs, name, prefix)

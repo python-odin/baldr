@@ -15,3 +15,6 @@ PATH_TYPE_DETAIL = 'detail'
 
 PATH_TYPE_COLLECTION = 'collection'
 PATH_TYPE_RESOURCE = 'resource'
+
+
+__all__ = [i for i in locals() if i.isupper()]
