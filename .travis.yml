@@ -14,7 +14,7 @@ env:
 #      env: DJANGO="django>=1.11,<1.12"
 
 install:
-  - pip install -q $DJANGO six odin<=1.0
+  - pip install -q $DJANGO six "odin<=1.0"
   - pip install coveralls
 
 script: coverage run django_test_runner/__main__.py baldr
