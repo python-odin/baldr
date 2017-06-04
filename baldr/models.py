@@ -2,11 +2,14 @@
 import inspect
 import odin
 import sys
+
 from django.core.exceptions import ValidationError
 from django.db import models
 from odin import registration
 from odin.fields import NOT_PROVIDED
 from odin.mapping import FieldResolverBase, mapping_factory
+from odin.utils import getmeta
+
 from baldr.model_fields import ResourceField, ResourceListField
 
 try:
@@ -22,7 +25,7 @@ class ModelFieldResolver(FieldResolverBase):
     Field resolver for Django Models
     """
     def get_field_dict(self):
-        meta = self.obj._meta
+        meta = getmeta(self.obj)
         return {f.attname: f for f in meta.fields}
 
 registration.register_field_resolver(ModelFieldResolver, models.Model)
@@ -76,7 +79,7 @@ class ModelResourceMixin(odin.Resource):
         :return:
 
         """
-        fields = cls._meta.field_map.keys()
+        fields = getmeta(cls).field_map.keys()
         data = queryset.values(*fields)
         if single:
             return cls.create_from_dict(data[0])

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # Well known methods
 GET = 'GET'
 HEAD = 'HEAD'

@@ -1,13 +1,16 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import
+
 import six
+
 from baldr.resources import Listing
+
 from . import constants
 
 __all__ = (
     # Basic routes
-    'collection', 'collection_action', 'resource', 'resource_action', 'route',
-    # Pending deprecation routes
-    'detail_route', 'action', 'detail_action',
+    'route', 'action', 'collection', 'collection_action',
+    'detail_route', 'detail_action',
     # Handlers
     'list_response',
     # Shortcuts
@@ -53,10 +56,10 @@ def route(func=None, name=None, path_type=constants.PATH_TYPE_COLLECTION, method
     route_number = _route_count
     _route_count += 1
 
-    def inner(func):
-        func.route = (route_number, path_type, method, name)
-        func.resource = resource
-        return func
+    def inner(f):
+        f.route = (route_number, path_type, method, name)
+        f.resource = resource
+        return f
 
     return inner(func) if func else inner
 
@@ -66,7 +69,7 @@ collection = collection_action = action = route
 def resource_route(func=None, name=None, method=constants.GET, resource=None):
     return route(func, name, constants.PATH_TYPE_RESOURCE, method, resource)
 
-detail_route = detail_action = resource = resource_action = resource_route
+detail_route = detail_action = resource_route
 
 
 # Handlers
@@ -75,12 +78,12 @@ def list_response(func=None, default_offset=0, default_limit=50):
     """
     Handle processing a list. It is assumed decorator will operate on a class.
     """
-    def inner(func):
+    def inner(f):
         def wrapper(self, request, *args, **kwargs):
             # Get paging args from query string
             offset = kwargs['offset'] = int(request.GET.get('offset', default_offset))
             limit = kwargs['limit'] = int(request.GET.get('limit', default_limit))
-            result = func(self, request, *args, **kwargs)
+            result = f(self, request, *args, **kwargs)
             if result is not None:
                 if isinstance(result, tuple) and len(result) == 2:
                     result, total_count = result

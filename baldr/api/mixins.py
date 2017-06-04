@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-from baldr.api import ResourceApiCommon
+from baldr.api import ResourceApi
 from baldr.exceptions import ImmediateErrorHttpResponse
 
 
-class LoginRequiredMixin(ResourceApiCommon):
+class LoginRequiredMixin(ResourceApi):
     """
     Ensure that a user has logged in.
     """

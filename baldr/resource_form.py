@@ -1,12 +1,15 @@
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from collections import OrderedDict
 
 import six
+import odin
+
+from collections import OrderedDict
 from django.forms import fields
 from django.forms.forms import DeclarativeFieldsMetaclass, BaseForm
 from django.forms.utils import ErrorList
-import odin
 from odin.exceptions import ValidationError
+from odin.utils import getmeta
 
 ALL_FIELDS = '__all__'
 
@@ -73,7 +76,7 @@ def fields_for_resource(resource, fields=None, exclude=None, widgets=None,
                         labels=None, help_texts=None, error_messages=None):
     field_list = []
     ignored = []
-    opts = resource._meta
+    opts = getmeta(resource)
 
     for f in opts.all_fields:
         if fields is not None and f.name not in fields:

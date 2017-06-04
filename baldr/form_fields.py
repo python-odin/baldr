@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
+import odin
+import six
+
 from django.core import exceptions as django_exceptions
 from django.forms import widgets
 from django.forms.fields import CharField
 from django.utils.translation import ugettext_lazy as _
-import odin
 from odin import exceptions as odin_exceptions
 from odin.codecs import json_codec
-import six
+from odin.utils import getmeta
 
 
 class ResourceField(CharField):
@@ -57,7 +59,7 @@ class ResourceField(CharField):
                 raise django_exceptions.ValidationError(str(ve))
 
         raise django_exceptions.ValidationError(
-            self.error_messages['invalid'] % self.resource_type._meta.resource_name, code='invalid'
+            self.error_messages['invalid'] % getmeta(self.resource_type).resource_name, code='invalid'
         )
 
     def validate(self, value):
@@ -76,7 +78,7 @@ class ResourceField(CharField):
                     raise django_exceptions.ValidationError(ve.messages)
         else:
             raise django_exceptions.ValidationError(
-                self.error_messages['invalid'] % self.resource_type._meta.resource_name, code='invalid')
+                self.error_messages['invalid'] % getmeta(self.resource_type).resource_name, code='invalid')
 
 
 class ResourceListField(ResourceField):
@@ -99,7 +101,7 @@ class ResourceListField(ResourceField):
                 raise django_exceptions.ValidationError(str(ve))
 
         raise django_exceptions.ValidationError(
-            self.error_messages['invalid'] % self.resource_type._meta.resource_name, code='invalid')
+            self.error_messages['invalid'] % getmeta(self.resource_type).resource_name, code='invalid')
 
     def validate(self, value):
         if value is None:
@@ -118,5 +120,5 @@ class ResourceListField(ResourceField):
         # Unknown type
         else:
             raise django_exceptions.ValidationError(
-                self.error_messages['invalid'] % self.resource_type._meta.resource_name, code='invalid'
+                self.error_messages['invalid'] % getmeta(self.resource_type).resource_name, code='invalid'
             )

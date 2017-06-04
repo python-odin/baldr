@@ -1,7 +1,10 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import
+
 from django.shortcuts import get_object_or_404
 from odin import registration
 from odin.exceptions import CodecDecodeError
+
 from . import ResourceApi, listing, collection, create, detail, update, patch, delete
 from ..exceptions import ImmediateErrorHttpResponse
 

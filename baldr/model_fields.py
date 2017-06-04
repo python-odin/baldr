@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
+import six
+
 from django.core import exceptions as django_exceptions
 from django.db import models
 from odin import exceptions as odin_exceptions
 from odin.codecs import json_codec
-import six
+from odin.utils import getmeta
+
 from baldr import form_fields
 
 # Treat an empty JSON object as None.
@@ -75,7 +78,7 @@ class ResourceField(models.TextField):
                 raise django_exceptions.ValidationError(str(cde))
 
         raise django_exceptions.ValidationError(
-            'Value provide is not a valid %s resource' % self.resource_type._meta.resource_name)
+            'Value provide is not a valid %s resource' % getmeta(self.resource_type).resource_name)
 
     def validate(self, value, model_instance):
         if not self.editable:
@@ -96,7 +99,7 @@ class ResourceField(models.TextField):
 
         else:
             raise django_exceptions.ValidationError(
-                'Value provide is not a valid %s resource' % self.resource_type._meta.resource_name)
+                'Value provide is not a valid %s resource' % getmeta(self.resource_type).resource_name)
 
     def get_db_prep_save(self, value, connection):
         # Convert our JSON object to a string before we save
@@ -147,7 +150,7 @@ class ResourceListField(ResourceField):
                 raise django_exceptions.ValidationError(ve.message)
 
         raise django_exceptions.ValidationError(
-            'Value provide is not a valid %s resource' % self.resource_type._meta.resource_name)
+            'Value provide is not a valid %s resource' % getmeta(self.resource_type).resource_name)
 
     def validate(self, value, model_instance):
         if not self.editable:
@@ -172,21 +175,4 @@ class ResourceListField(ResourceField):
 
         else:
             raise django_exceptions.ValidationError(
-                'Value provide is not a valid %s resource' % self.resource_type._meta.resource_name)
-
-
-# Register field with south.
-try:
-    from south.modelsinspector import add_introspection_rules
-    add_introspection_rules([
-        (
-            [ResourceField, ResourceListField],
-            [],
-            {
-                'resource_type': ['resource_type', {}],
-                'codec': ['codec', {'default': json_codec}],
-            }
-        )
-    ], ["^baldr\.model_fields\.\w+Field"])
-except ImportError:
-    pass
+                'Value provide is not a valid %s resource' % getmeta(self.resource_type).resource_name)
