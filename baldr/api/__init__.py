@@ -10,16 +10,15 @@ from django.conf import settings
 from django.conf.urls import url, include
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, Http404
-from django.utils.functional import lazy_property
 from django.views.decorators.csrf import csrf_exempt
+
 from odin.codecs import json_codec
 from odin.exceptions import CodecDecodeError, ValidationError
-from odin.utils import getmeta
+from odin.utils import getmeta, lazy_property
 
 from .. import content_type_resolvers
 from ..resources import Error
 from ..exceptions import ImmediateErrorHttpResponse, ImmediateHttpResponse
-
 from .constants import *  # noqa
 from .route_decorators import *  # noqa
 
