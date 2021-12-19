@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
-import odin
-import six
+from typing import Type
 
+import odin
 from django.core import exceptions as django_exceptions
 from django.forms import widgets
 from django.forms.fields import CharField
@@ -22,9 +21,8 @@ class ResourceField(CharField):
         'invalid': _('This field is not a valid %s resource.'),
     }
 
-    def __init__(self, resource_type, codec=json_codec, codec_kargs=None, *args, **kwargs):
-        assert issubclass(resource_type, odin.Resource)
-        super(ResourceField, self).__init__(*args, **kwargs)
+    def __init__(self, resource_type: Type[odin.Resource], codec=json_codec, codec_kargs=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         self.resource_type = resource_type
         self.codec = codec
@@ -45,16 +43,19 @@ class ResourceField(CharField):
         if isinstance(value, self.resource_type):
             return value
 
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             try:
                 return self.codec.loads(value, self.resource_type, full_clean=False)
+
             except odin_exceptions.ValidationError as ve:
                 if hasattr(ve, 'message_dict'):
                     raise django_exceptions.ValidationError(str(ve.message_dict))
                 else:
                     raise django_exceptions.ValidationError(ve.messages)
+
             except odin_exceptions.CodecDecodeError as cde:
                 raise django_exceptions.ValidationError(str(cde))
+
             except ValueError as ve:
                 raise django_exceptions.ValidationError(str(ve))
 
@@ -63,7 +64,7 @@ class ResourceField(CharField):
         )
 
     def validate(self, value):
-        super(ResourceField, self).validate(value)
+        super().validate(value)
 
         if value is None:
             return
@@ -71,11 +72,13 @@ class ResourceField(CharField):
         if isinstance(value, self.resource_type):
             try:
                 value.full_clean()
+
             except odin_exceptions.ValidationError as ve:
                 if hasattr(ve, 'message_dict'):
                     raise django_exceptions.ValidationError(str(ve.message_dict))
                 else:
                     raise django_exceptions.ValidationError(ve.messages)
+
         else:
             raise django_exceptions.ValidationError(
                 self.error_messages['invalid'] % getmeta(self.resource_type).resource_name, code='invalid')
@@ -92,11 +95,13 @@ class ResourceListField(ResourceField):
         if isinstance(value, (list, tuple)):
             return value
 
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             try:
                 return self.codec.loads(value, self.resource_type, full_clean=False)
+
             except odin_exceptions.CodecDecodeError as cde:
                 raise django_exceptions.ValidationError(str(cde))
+
             except ValueError as ve:
                 raise django_exceptions.ValidationError(str(ve))
 
@@ -112,8 +117,10 @@ class ResourceListField(ResourceField):
             for idx, resource in enumerate(value):
                 try:
                     super(ResourceField, self).validate(value)
+
                 except django_exceptions.ValidationError as ve:
-                        errors[idx] = ve.message_dict
+                    errors[idx] = ve.message_dict
+
             if errors:
                 raise django_exceptions.ValidationError(errors)
 
