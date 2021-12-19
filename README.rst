@@ -2,7 +2,7 @@
 Odin integration with Django
 ############################
 
-Includes mapping of Django Models to Odin resources, and RESTful API implementation for Django using Odin resources.
+Includes mapping of Django Models to Odin resources.
 
 .. image:: https://img.shields.io/pypi/l/baldr.svg
     :target: https://pypi.python.org/pypi/baldr/
@@ -11,17 +11,14 @@ Includes mapping of Django Models to Odin resources, and RESTful API implementat
 .. image:: https://img.shields.io/pypi/v/baldr.svg
     :target: https://pypi.python.org/pypi/baldr/
 
-.. image:: https://travis-ci.org/python-odin/baldr.svg?branch=master
-    :target: https://travis-ci.org/python-odin/baldr
-    :alt: Travis CI Status
-
-.. image:: https://coveralls.io/repos/python-odin/baldr/badge.svg?branch=master
-    :target: https://coveralls.io/github/python-odin/baldr?branch=master
-    :alt: Coveralls
-
 .. image:: https://requires.io/github/python-odin/baldr/requirements.svg?branch=master
     :target: https://requires.io/github/python-odin/baldr/requirements/?branch=master
     :alt: Requirements Status
+
+
+.. note::
+   Breaking change. Baldr 1.0 drops support for generating APIs and focuses
+   entirely on mapping models and Django. For APIs I recommend Django-Ninja.
 
 
 Quick links
@@ -36,5 +33,5 @@ Requires
 ********
 
 * six
-* odin >= 0.5.4
-* django >= 1.5
+* odin >= 1.0
+* django >= 2.2

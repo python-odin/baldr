@@ -1,0 +1,46 @@
+[tool.poetry]
+name = "baldr"
+version = "1.0"
+description = "Odin integration to Django"
+authors = ["Tim Savage <tim@savage.company>"]
+license = "BSD-3-Clause"
+readme = "README.rst"
+repository = "https://github.com/python-odin/baldr"
+documentation = "https://odin.readthedocs.org"
+keywords = ["django", "data-structure", "data-mapping"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Framework :: Django",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+packages = [
+    { include = "baldr", from = "src" },
+    { include = "tests", format = "sdist" },
+]
+
+[tool.poetry.dependencies]
+python = ">=3.6 <3.11"
+odin = ">=1.0"
+django = ">=2.2"
+
+[tool.poetry.dev-dependencies]
+mock = "*"
+pytest = "*"
+pytest-cov = "*"
+pytest-django = "*"
+sphinx = "*"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

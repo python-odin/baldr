@@ -1,12 +1,14 @@
-# -*- coding: utf-8 -*-
 import inspect
 import odin
 import sys
+
 from django.core.exceptions import ValidationError
 from django.db import models
 from odin import registration
 from odin.fields import NOT_PROVIDED
 from odin.mapping import FieldResolverBase, mapping_factory
+from odin.utils import getmeta
+
 from baldr.model_fields import ResourceField, ResourceListField
 
 try:
@@ -17,20 +19,23 @@ except ImportError:
 
 # Register support for Django Models and Validators
 
+
 class ModelFieldResolver(FieldResolverBase):
     """
     Field resolver for Django Models
     """
+
     def get_field_dict(self):
-        meta = self.obj._meta
+        meta = getmeta(self.obj)
         return {f.attname: f for f in meta.fields}
+
 
 registration.register_field_resolver(ModelFieldResolver, models.Model)
 
 
-# Register a the Django ValidationError exception with Odin.
+# Register the Django ValidationError exception with Odin.
 def django_validation_error_handler(exception, field, errors):
-    if hasattr(exception, 'code') and exception.code in field.error_messages:
+    if hasattr(exception, "code") and exception.code in field.error_messages:
         message = field.error_messages[exception.code]
         if exception.params:
             message = message % exception.params
@@ -38,15 +43,20 @@ def django_validation_error_handler(exception, field, errors):
     else:
         errors.extend(exception.messages)
 
-registration.register_validation_error_handler(ValidationError, django_validation_error_handler)
+
+registration.register_validation_error_handler(
+    ValidationError, django_validation_error_handler
+)
 
 
 # Model factories and helper methods.
+
 
 class ModelResourceMixin(odin.Resource):
     """
     Mixin that adds some helper methods for working with resources generated from models.
     """
+
     class Meta:
         abstract = True
 
@@ -76,7 +86,7 @@ class ModelResourceMixin(odin.Resource):
         :return:
 
         """
-        fields = cls._meta.field_map.keys()
+        fields = getmeta(cls).field_map.keys()
         data = queryset.values(*fields)
         if single:
             return cls.create_from_dict(data[0])
@@ -127,17 +137,17 @@ def default_map(field):
         return NOT_PROVIDED
     return field.default
 
+
 BASIC_ATTR_MAP = dict(
-    null='null',
-    choices='choices',
+    null="null",
+    choices="choices",
     default=default_map,
-    use_default_if_not_provided=lambda _: True
+    use_default_if_not_provided=lambda _: True,
 )
 MODEL_FIELD_MAP = [
     # (Model Field, Odin Field, attribute mappings {odin_attr: model_attr})
-    (ResourceField, odin.DictAs, dict(resource='resource_type', null='null')),
-    (ResourceListField, odin.ListOf, dict(resource='resource_type', null='null')),
-
+    (ResourceField, odin.DictAs, dict(resource="resource_type", null="null")),
+    (ResourceListField, odin.ListOf, dict(resource="resource_type", null="null")),
     (models.AutoField, odin.StringField, dict()),
     (models.DateTimeField, odin.DateTimeField, BASIC_ATTR_MAP),
     (models.TimeField, odin.TimeField, BASIC_ATTR_MAP),
@@ -145,7 +155,7 @@ MODEL_FIELD_MAP = [
     (models.IntegerField, odin.IntegerField, BASIC_ATTR_MAP),
     (models.FloatField, odin.FloatField, BASIC_ATTR_MAP),
     (models.BooleanField, odin.BooleanField, BASIC_ATTR_MAP),
-    (models.CharField, odin.StringField, dict(BASIC_ATTR_MAP, max_length='max_length')),
+    (models.CharField, odin.StringField, dict(BASIC_ATTR_MAP, max_length="max_length")),
     (models.TextField, odin.StringField, BASIC_ATTR_MAP),
 ]
 
@@ -162,7 +172,7 @@ def field_factory(model_field):
                 oa: (ma(model_field) if callable(ma) else getattr(model_field, ma))
                 for oa, ma in attrs.items()
             }
-            attrs['validators'] = getattr(model_field, 'validators')
+            attrs["validators"] = getattr(model_field, "validators")
             return of(**attrs)
 
 
@@ -188,10 +198,19 @@ def field_in_filters(model_field, filters):
     return False
 
 
-def model_resource_factory(model, module=None, base_resource=odin.Resource, resource_mixins=None,
-                           exclude_fields=None, include_fields=None, generate_mappings=True,
-                           return_mappings=False, additional_fields=None, resource_type_name=None,
-                           reverse_exclude_fields=None):
+def model_resource_factory(
+    model,
+    module=None,
+    base_resource=odin.Resource,
+    resource_mixins=None,
+    exclude_fields=None,
+    include_fields=None,
+    generate_mappings=True,
+    return_mappings=False,
+    additional_fields=None,
+    resource_type_name=None,
+    reverse_exclude_fields=None,
+):
     """
     Factory method for generating a resource from a existing Django model.
 
@@ -222,7 +241,7 @@ def model_resource_factory(model, module=None, base_resource=odin.Resource, reso
     resource_mixins = resource_mixins or []
     bases = tuple(resource_mixins + [ModelResourceMixin, base_resource])
     attrs = {}
-    model_opts = model._meta
+    model_opts = getmeta(model)
     resource_type_name = resource_type_name or model_opts.object_name
 
     # Determine the calling module
@@ -255,8 +274,8 @@ def model_resource_factory(model, module=None, base_resource=odin.Resource, reso
     # Setup other require attributes and create type
     if isinstance(module, str):
         module = sys.modules[module]
-    attrs['__module__'] = module.__name__
-    attrs['model'] = model
+    attrs["__module__"] = module.__name__
+    attrs["model"] = model
     resource_type = type(resource_type_name, bases, attrs)
 
     # Generate mappings
@@ -270,12 +289,3 @@ def model_resource_factory(model, module=None, base_resource=odin.Resource, reso
         return resource_type, forward_mapping, reverse_mapping
     else:
         return resource_type
-
-
-# Register Django Promises (used by translated strings) with Odin codecs
-
-# TODO: this is not quite correct, will be corrected in updated serialisation tools current in development
-# for odin
-# json_codec.JSON_TYPES[Promise] = force_text
-# if msgpack_codec:
-#     msgpack_codec.TYPE_SERIALIZERS[Promise] = force_text
