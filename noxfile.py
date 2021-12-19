@@ -7,5 +7,5 @@ from nox.sessions import Session
 def tests(session: Session, django):
     session.install("odin", f"django=={django}")
     session.install("pytest", "pytest-cov", "pytest-django")
-    session.env["PYTHONPATH"] = "tests"
+    session.env["PYTHONPATH"] = "tests:src"
     session.run("pytest")
