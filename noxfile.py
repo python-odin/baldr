@@ -3,18 +3,9 @@ from nox.sessions import Session
 
 
 @nox.session(python=("3.6", "3.8"), reuse_venv=True)
-def tests(session: Session):
-    # fmt: off
-    session.run(
-        "poetry", "export",
-        "--dev",
-        "-o", "requirements.txt",
-        "-E", "toml",
-        "-E", "yaml",
-        "-E", "arrow",
-        "-E", "msgpack",
-        external=True,
-    )
-    # fmt: on
-    session.install("-r", "requirements.txt")
+@nox.parametrize("django", ["2.2"])
+def tests(session: Session, django):
+    session.install("odin", f"django=={django}")
+    session.install("pytest", "pytest-cov", "pytest-django")
+    session.env["PYTHONPATH"] = "tests"
     session.run("pytest")
