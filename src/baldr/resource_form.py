@@ -127,7 +127,7 @@ def fields_for_resource(
     return field_dict
 
 
-class ResourceFormOptions(object):
+class ResourceFormOptions:
     def __init__(self, options=None):
         self.resource = getattr(options, "resource", None)
         self.fields = getattr(options, "fields", None)
@@ -234,9 +234,7 @@ class BaseResourceForm(BaseForm):
     def _post_clean(self):
         opts = self._meta
 
-        self.instance = construct_instance(
-            self, self.instance, opts.fields, opts.exclude
-        )
+        self.instance = construct_instance(self, self.instance, opts.fields, opts.exclude)
 
         try:
             self.instance.full_clean()
