@@ -17,8 +17,9 @@ Includes mapping of Django Models to Odin resources.
 
 
 .. note::
-   Breaking change. Baldr 1.0 drops support for generating APIs and focuses
-   entirely on mapping models and Django. For APIs I recommend Django-Ninja.
+   Breaking change. Baldr 2.0 drops support for generating APIs and focuses
+   entirely on mapping models and Django. For APIs I recommend
+   `Django-Ninja <https://django-ninja.rest-framework.com/>`_.
 
 
 Quick links
@@ -32,6 +33,5 @@ Quick links
 Requires
 ********
 
-* six
 * odin >= 1.0
 * django >= 2.2

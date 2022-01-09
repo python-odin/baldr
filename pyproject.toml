@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "baldr"
-version = "1.0"
+version = "2.0"
 description = "Odin integration to Django"
 authors = ["Tim Savage <tim@savage.company>"]
 license = "BSD-3-Clause"
